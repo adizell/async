@@ -11,6 +11,14 @@ from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.adapters.outbound.persistence.models.base_model import Base
 
+# Add this relationship to the AuthPermission class
+users = relationship(
+    "User",
+    secondary="user_access_permission",
+    back_populates="permissions",
+    lazy="joined"
+)
+
 
 class AuthPermission(Base):
     """

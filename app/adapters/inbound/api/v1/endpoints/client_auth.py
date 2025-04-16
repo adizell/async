@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.deps import get_db, get_current_client, logger
-from app.application.dtos.user_dto import UserCreate, TokenData, TokenRefresh
+from app.application.dtos.user_dto import UserCreate, TokenData, TokenRefresh, UserOutput
 from app.application.use_cases.auth_use_cases import AuthService
 
 router = APIRouter()

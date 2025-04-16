@@ -18,12 +18,12 @@ from app.adapters.outbound.persistence.models.base_model import Base
 from app.adapters.outbound.persistence.models.user_access_group import user_access_groups
 
 # Associação many-to-many entre usuários e grupos
-aud_user_access_groups = Table(
-    "user_access_groups",
-    Base.metadata,
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("group_id", BigInteger, ForeignKey("auth_group.id", ondelete="CASCADE"), primary_key=True),
-)
+# aud_user_access_groups = Table(
+#     "user_access_groups",
+#     Base.metadata,
+#     Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+#     Column("group_id", BigInteger, ForeignKey("auth_group.id", ondelete="CASCADE"), primary_key=True),
+# )
 
 # Associação many-to-many entre usuários e permissões diretas
 user_access_permission = Table(
