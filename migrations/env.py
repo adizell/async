@@ -10,14 +10,11 @@ from alembic import context
 # Ajusta path para poder importar a aplicação
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app.adapters.configuration.config import settings
+from app.adapters.configuration.config import settings  # <- usa o config.py
 from app.adapters.outbound.persistence.models import Base
 
-# IMPORTANTE: Use a URL síncrona para o Alembic
-# Substitua asyncpg por psycopg2 se a URL estiver usando asyncpg
+# Export da URL do banco para uso em outros módulos
 DB_URL = str(settings.DATABASE_URL)
-if 'asyncpg' in DB_URL:
-    DB_URL = DB_URL.replace('postgresql+asyncpg', 'postgresql+psycopg2')
 
 # Config Alembic
 alembic_config = context.config

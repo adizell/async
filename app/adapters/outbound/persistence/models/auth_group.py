@@ -11,14 +11,6 @@ from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm import relationship
 from app.adapters.outbound.persistence.models.base_model import Base
 
-# Add this relationship to the AuthGroup class
-users = relationship(
-    "User",
-    secondary="user_access_groups",
-    back_populates="groups",
-    lazy="joined"
-)
-
 
 class AuthGroup(Base):
     """

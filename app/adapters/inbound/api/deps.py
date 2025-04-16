@@ -11,10 +11,9 @@ import logging
 from uuid import UUID
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy.orm import Session
 
-from app.adapters.outbound.persistence.database import get_async_db
+from app.adapters.outbound.persistence.database import get_db
 from app.adapters.outbound.persistence.models.user_model import User
 from app.adapters.outbound.persistence.models.client_model import Client
 from app.adapters.outbound.security.auth_user_manager import UserAuthManager
@@ -30,10 +29,9 @@ bearer_scheme = HTTPBearer()
 # Gerenciamento de Sessão de Banco de Dados
 ########################################################################
 
-# Alias de get_async_db para retrocompatibilidade
-get_session = get_async_db
-get_db_session = get_async_db
-get_db = get_async_db  # Manter para retrocompatibilidade
+# Alias de get_db para retrocompatibilidade
+get_session = get_db
+get_db_session = get_db
 
 
 ########################################################################
@@ -67,16 +65,16 @@ def verify_client_token(
     return sub
 
 
-async def get_current_client(
+def get_current_client(
         credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_async_db),
+        db: Session = Depends(get_db),
 ) -> Client:
     """
     Obtém o client atual a partir do token.
 
     Args:
         credentials: Credenciais de autorização com bearer token
-        db: Sessão do banco de dados assíncrona
+        db: Sessão do banco de dados
 
     Returns:
         Objeto Client autenticado
@@ -98,12 +96,7 @@ async def get_current_client(
                 detail="Token do client inválido: 'sub' não é um inteiro.",
             )
 
-        # Utilizar versão assíncrona da consulta
-        result = await db.execute(
-            select(Client).filter(Client.id == client_id, Client.is_active.is_(True))
-        )
-        client = result.scalars().first()
-
+        client = db.query(Client).filter(Client.id == client_id, Client.is_active.is_(True)).first()
         if not client:
             logger.warning(f"Client ID {client_id} não encontrado ou inativo")
             raise HTTPException(
@@ -127,16 +120,16 @@ async def get_current_client(
 # Autenticação via Token do Usuário
 ########################################################################
 
-async def get_current_user(
+def get_current_user(
         credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_async_db),
+        db: Session = Depends(get_db),
 ) -> User:
     """
     Obtém o usuário atual a partir do token.
 
     Args:
         credentials: Credenciais de autorização com bearer token
-        db: Sessão do banco de dados assíncrona
+        db: Sessão do banco de dados
 
     Returns:
         Objeto User autenticado
@@ -157,12 +150,7 @@ async def get_current_user(
                 detail="Token inválido: 'sub' não é um UUID válido.",
             )
 
-        # Utilizar versão assíncrona da consulta
-        result = await db.execute(
-            select(User).filter(User.id == user_id, User.is_active.is_(True))
-        )
-        user = result.scalars().first()
-
+        user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
         if not user:
             logger.warning(f"Usuário {user_id} não encontrado ou inativo")
             raise HTTPException(

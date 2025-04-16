@@ -10,20 +10,17 @@ facilitando a importação e uso em outros módulos.
 # Importar Base
 from app.adapters.outbound.persistence.models.base_model import Base
 
-# Tabelas de associação
-from app.adapters.outbound.persistence.models.user_access_group import user_access_groups
-from app.adapters.outbound.persistence.models.user_access_permission import user_access_permission
-from app.adapters.outbound.persistence.models.auth_group_permissions import auth_group_permissions
-
-# Modelos principais
-from app.adapters.outbound.persistence.models.user_model import User, RefreshToken
+# Importar modelos principais
+from app.adapters.outbound.persistence.models.user_model import User, user_access_groups, user_access_permission
 from app.adapters.outbound.persistence.models.client_model import Client
 
-# Modelos de autorização
+# Importar modelos de autorização
 from app.adapters.outbound.persistence.models.auth_group import AuthGroup
 from app.adapters.outbound.persistence.models.auth_permission import AuthPermission
 from app.adapters.outbound.persistence.models.auth_content_type import AuthContentType
+from app.adapters.outbound.persistence.models.auth_group_permissions import auth_group_permissions
 
+# Exportar todos os modelos
 __all__ = [
     # Base
     "Base",
@@ -31,7 +28,6 @@ __all__ = [
     # Modelos principais
     "User",
     "Client",
-    "RefreshToken",
 
     # Tabelas de associação
     "user_access_groups",
