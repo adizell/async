@@ -50,13 +50,16 @@ def after_cursor_execute(conn, cursor, stmt, params, ctx, executemany):
 
 # --- Construção das URLs e Engines ---
 
-DATABASE_URL = str(settings.DATABASE_URL)
-host_info = DATABASE_URL.split("@")[-1]
-logger.info(f"Conectando ao banco de dados em: {host_info}")
+# Assíncrono usa asyncpg; síncrono substitui por psycopg2
+DATABASE_URL_ASYNC = str(settings.DATABASE_URL)
+DATABASE_URL_SYNC = DATABASE_URL_ASYNC.replace("+asyncpg", "+psycopg2")
+
+logger.info(f"[ASYNC] Conectando ao DB em: {DATABASE_URL_ASYNC.split('@')[-1]}")
+logger.info(f"[SYNC] Conectando ao DB em: {DATABASE_URL_SYNC.split('@')[-1]}")
 
 # Engine síncrono (para scripts ou use_cases sync)
 sync_engine = create_engine(
-    DATABASE_URL,
+    DATABASE_URL_SYNC,
     poolclass=QueuePool,
     pool_pre_ping=True,
     pool_size=20,
@@ -72,7 +75,7 @@ event.listen(sync_engine, "after_cursor_execute", after_cursor_execute)
 
 # Engine assíncrono (para endpoints async)
 async_engine: AsyncEngine = create_async_engine(
-    DATABASE_URL.replace("postgresql+psycopg2", "postgresql+asyncpg"),
+    DATABASE_URL_ASYNC,
     pool_pre_ping=True,
     pool_size=20,
     max_overflow=10,
