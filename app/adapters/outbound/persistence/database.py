@@ -3,149 +3,149 @@
 """
 Configuração de conexão com banco de dados.
 
-Este módulo gerencia a conexão com o banco de dados PostgreSQL,
-configurando o pool de conexões e fornecendo funções para obter sessões.
+Gerencia engines e sessions (sync e async) para o PostgreSQL,
+configura pools, eventos e fornece funções de dependência para FastAPI.
 """
 
 import time
 import logging
-from typing import Generator
 from contextlib import contextmanager
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, scoped_session, Session
+from typing import Generator
+
+from sqlalchemy import event, create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, Session as SyncSession
 from sqlalchemy.pool import QueuePool
 
 from app.adapters.configuration.config import settings
 
-# Configurar logger
 logger = logging.getLogger(__name__)
 
 
-def handle_disconnect(dbapi_connection, connection_record, connection_proxy):
-    """
-    Callback para tratar desconexões de banco de dados.
-    Executado sempre que uma conexão é retirada do pool.
-    """
-    connection_record.info.pop("query_start_time", None)
-    connection_record.info.pop("connection_start_time", None)
+# --- Eventos de monitoramento de performance e reconnect ---
+
+def handle_disconnect(dbapi_conn, conn_rec, conn_proxy):
     try:
-        if dbapi_connection is not None and hasattr(dbapi_connection, "ping"):
-            dbapi_connection.ping(reconnect=True, attempts=3, delay=5)
+        if hasattr(dbapi_conn, "ping"):
+            dbapi_conn.ping(reconnect=True, attempts=3, delay=5)
     except Exception as e:
-        connection_record.invalidate(e)
-        logger.warning(f"Conexão com o banco de dados foi invalidada: {str(e)}")
+        conn_rec.invalidate(e)
+        logger.warning(f"Conexão invalidada: {e}")
 
 
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    """
-    Evento executado antes de qualquer query.
-    Usado para medição de performance e logging.
-    """
+def before_cursor_execute(conn, cursor, stmt, params, ctx, executemany):
     conn.info.setdefault("query_start_time", time.time())
     if settings.ENVIRONMENT == "development":
-        logger.debug(f"Executando SQL: {statement}")
+        logger.debug(f"SQL: {stmt}")
 
 
-def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    """
-    Evento executado depois de qualquer query.
-    Usado para medição de performance e logging.
-    """
+def after_cursor_execute(conn, cursor, stmt, params, ctx, executemany):
     total = time.time() - conn.info.pop("query_start_time", time.time())
-
-    # Log de queries lentas
-    if total > 0.5:  # queries mais lentas que 500ms
-        logger.warning(f"Query lenta ({total:.2f}s): {statement}")
+    if total > 0.5:
+        logger.warning(f"Query lenta ({total:.2f}s): {stmt}")
     elif settings.ENVIRONMENT == "development":
         logger.debug(f"Query executada em {total:.2f}s")
 
 
-# Construir URL da conexão
-database_url = str(settings.DATABASE_URL)
-logger.info(f"Conectando ao banco de dados: {database_url.split('@')[-1]}")
+# --- Construção das URLs e Engines ---
 
-try:
-    # Criar engine com configurações avançadas do pool
-    engine = create_engine(
-        database_url,
-        # Configurações básicas
-        echo=False,  # Não logar queries automaticamente (usamos eventos para isso)
-        future=True,  # Usar recursos mais recentes do SQLAlchemy
-        # Configurações do pool
-        poolclass=QueuePool,  # Usar QueuePool (gerenciamento mais sofisticado de conexões)
-        pool_pre_ping=True,  # Verificar conexões quebradas antes de usar
-        pool_size=20,  # Número de conexões no pool
-        max_overflow=10,  # Número extra de conexões além do pool
-        pool_timeout=30,  # Tempo máximo para esperar por uma conexão disponível
-        pool_recycle=1800,  # Reciclar conexões após 30 minutos (previne conexões zumbis)
-    )
+DATABASE_URL = str(settings.DATABASE_URL)
+host_info = DATABASE_URL.split("@")[-1]
+logger.info(f"Conectando ao banco de dados em: {host_info}")
 
-    # Registrar eventos para monitorar queries e conexões
-    event.listen(engine, "checkout", handle_disconnect)
-    event.listen(engine, "before_cursor_execute", before_cursor_execute)
-    event.listen(engine, "after_cursor_execute", after_cursor_execute)
+# Engine síncrono (para scripts ou use_cases sync)
+sync_engine = create_engine(
+    DATABASE_URL,
+    poolclass=QueuePool,
+    pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=False,
+    future=True,
+)
+event.listen(sync_engine, "checkout", handle_disconnect)
+event.listen(sync_engine, "before_cursor_execute", before_cursor_execute)
+event.listen(sync_engine, "after_cursor_execute", after_cursor_execute)
 
-    # Session configurada com scoped_session para thread safety
-    SessionFactory = sessionmaker(
-        autocommit=False,  # Não confirma automaticamente as transações
-        autoflush=False,  # Não realiza flush automaticamente em cada query
-        bind=engine,  # Define a conexão (engine) utilizada nas sessões
-    )
+# Engine assíncrono (para endpoints async)
+async_engine: AsyncEngine = create_async_engine(
+    DATABASE_URL.replace("postgresql+psycopg2", "postgresql+asyncpg"),
+    pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=False,
+    future=True,
+)
+# Registrar eventos no sync_engine interno do async_engine
+event.listen(async_engine.sync_engine, "checkout", handle_disconnect)
+event.listen(async_engine.sync_engine, "before_cursor_execute", before_cursor_execute)
+event.listen(async_engine.sync_engine, "after_cursor_execute", after_cursor_execute)
 
-    # Criar scoped session - garante thread safety
-    SessionLocal = scoped_session(SessionFactory)
+# --- Session factories ---
 
-    logger.info("Conexão com o banco de dados configurada com sucesso")
+# Síncrono
+SessionLocal = sessionmaker(
+    bind=sync_engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+    class_=SyncSession,
+)
 
-except SQLAlchemyError as e:
-    logger.error(f"Erro ao conectar ao banco de dados: {str(e)}")
-    raise
+# Assíncrono
+AsyncSessionLocal = sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
 
+logger.info("Engines e sessions configurados com sucesso")
+
+
+# --- Dependências e context managers ---
 
 @contextmanager
-def get_db_context() -> Generator[Session, None, None]:
+def get_sync_db() -> Generator[SyncSession, None, None]:
     """
-    Fornece um contexto para operações de banco de dados,
-    garantindo o fechamento da sessão ao final.
-
-    Yields:
-        Sessão do SQLAlchemy
-
-    Example:
-        ```python
-        with get_db_context() as db:
-            users = db.query(User).all()
-        ```
+    Context manager para sessões síncronas.
+    Uso em scripts ou em use_cases sync.
     """
-    session = SessionLocal()
+    db: SyncSession = SessionLocal()
     try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
+        yield db
+        db.commit()
+    except:
+        db.rollback()
         raise
     finally:
-        session.close()
+        db.close()
 
 
-def get_db() -> Generator[Session, None, None]:
+async def get_async_db() -> AsyncSession:
     """
-    Dependency injection para uso com FastAPI.
-
-    Yields:
-        Sessão do SQLAlchemy
-
-    Example:
-        ```python
-        @app.get("/users")
-        def get_users(db: Session = Depends(get_db)):
-            return db.query(User).all()
-        ```
+    Dependência FastAPI para endpoints async.
+    Use: async def endpoint(db: AsyncSession = Depends(get_async_db))
     """
-    with get_db_context() as session:
-        yield session
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except:
+            await session.rollback()
+            raise
 
 
-# Para compatibilidade com código existente
-Session = SessionLocal
+def get_db() -> Generator[SyncSession, None, None]:
+    """
+    Dependência FastAPI para endpoints síncronos.
+    Use: def endpoint(db: SyncSession = Depends(get_db))
+    """
+    with get_sync_db() as db:
+        yield db

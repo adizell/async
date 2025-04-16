@@ -19,46 +19,73 @@ class UserAuthManager:
 
     crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+    class UserAuthManager:
+        """JWT authentication manager for users"""
+
+        crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+        @classmethod
+        def create_access_token(cls, subject: str, expires_delta: timedelta = None) -> str:
+            """Create an access token with expiration"""
+            if expires_delta is None:
+                expires_delta = timedelta(minutes=DEFAULT_EXPIRES_MIN)
+
+            expire = datetime.utcnow() + expires_delta
+            payload = {
+                "sub": str(subject),
+                "exp": int(expire.timestamp()),
+                "type": "access",
+            }
+
+            return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
     @classmethod
-    def create_access_token(cls, subject: str, expires_delta: timedelta = None) -> str:
-        """
-        Cria um token JWT para o usuário autenticado.
-
-        - `subject`: normalmente o UUID do usuário.
-        - `expires_delta`: tempo de expiração customizado.
-        """
-        if expires_delta is None:
-            expires_delta = timedelta(minutes=DEFAULT_EXPIRES_MIN)
-
+    def create_refresh_token(cls, subject: str) -> str:
+        """Create a refresh token"""
+        # Longer expiration for refresh tokens
+        expires_delta = timedelta(days=7)
         expire = datetime.utcnow() + expires_delta
+
         payload = {
             "sub": str(subject),
             "exp": int(expire.timestamp()),
-            "type": "user",
+            "type": "refresh",
         }
 
         return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
     @classmethod
     def verify_access_token(cls, token: str) -> dict:
-        """
-        Verifica e decodifica um token JWT de usuário.
-
-        Retorna o payload se for válido.
-        Lança HTTP 401 se o token for inválido, expirado ou incorreto.
-        """
+        """Verify an access token"""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("type") != "user":
+            if payload.get("type") != "access":
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token inválido: tipo incorreto.",
+                    detail="Invalid token type.",
                 )
             return payload
         except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token inválido ou expirado.",
+                detail="Invalid or expired token.",
+            )
+
+    @classmethod
+    def verify_refresh_token(cls, token: str) -> dict:
+        """Verify a refresh token"""
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            if payload.get("type") != "refresh":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token type.",
+                )
+            return payload
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token.",
             )
 
     @classmethod

@@ -175,3 +175,20 @@ class TokenData(CustomBaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Add this class
+class TokenRefresh(CustomBaseModel):
+    """Schema for refresh token requests"""
+    refresh_token: str = Field(..., description="Refresh token")
+
+
+# Update TokenData class
+class TokenData(CustomBaseModel):
+    """Schema for token response"""
+    access_token: str = Field(..., description="JWT access token")
+    refresh_token: str = Field(..., description="JWT refresh token for renewal")
+    expires_at: datetime = Field(..., description="Access token expiration datetime")
+
+    class Config:
+        from_attributes = True

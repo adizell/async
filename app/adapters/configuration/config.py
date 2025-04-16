@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
         # Construir a URL sem a barra no caminho
         return PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme="postgresql+asyncpg",
             username=data["POSTGRES_USER"],
             password=data["POSTGRES_PASSWORD"],
             host=data["POSTGRES_HOST"],
