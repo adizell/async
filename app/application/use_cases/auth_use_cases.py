@@ -7,17 +7,17 @@ Este módulo implementa o serviço para operações de autenticação de usuári
 incluindo registro, login e renovação de tokens.
 """
 
-from datetime import datetime, timedelta
 import logging
 import uuid
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
+from app.adapters.configuration.config import settings
 from app.adapters.outbound.persistence.repositories.user_repository import user as user_repository
 from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 from app.application.dtos.user_dto import UserCreate, TokenData
 from app.domain.exceptions import InvalidCredentialsException, DatabaseOperationException
 
-# Configurar logger
 logger = logging.getLogger(__name__)
 
 
@@ -68,8 +68,8 @@ class AuthService:
         )
 
         # Gerar tokens
-        access_token_expires = timedelta(minutes=120)  # 2 horas
-        refresh_token_expires = timedelta(days=30)  # 30 dias
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS)
+        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
         access_token = UserAuthManager.create_access_token(
             subject=str(user.id),
@@ -126,8 +126,8 @@ class AuthService:
             # self._check_token_not_revoked(token_id)
 
             # Gerar novos tokens
-            access_token_expires = timedelta(minutes=120)  # 2 horas
-            refresh_token_expires = timedelta(days=30)  # 30 dias
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS)
+            refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
             new_access_token = UserAuthManager.create_access_token(
                 subject=str(user.id),

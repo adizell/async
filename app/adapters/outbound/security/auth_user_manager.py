@@ -77,6 +77,9 @@ class UserAuthManager:
 
     @classmethod
     def create_refresh_token(cls, subject: str, token_id: str, expires_delta: timedelta = None) -> str:
+        if expires_delta is None:
+            # Usar a configuração em vez de um valor fixo
+            expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         """
         Cria um token JWT para refresh token.
 
