@@ -1,12 +1,16 @@
 # app/adapters/inbound/api/v1/endpoints/auth_endpoint.py
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
 from app.application.use_cases.auth_use_cases import AuthService
 from app.adapters.outbound.persistence.models.user_model import User
 from app.adapters.inbound.api.deps import get_session, get_current_client
+from app.adapters.configuration.config import settings
 from app.domain.exceptions import (
     ResourceAlreadyExistsException,
     InvalidCredentialsException,
@@ -17,16 +21,16 @@ from app.application.dtos.user_dto import UserCreate, UserOutput, TokenData, Ref
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# esquema de bearer para extrair o token do header Authorization
+bearer_scheme = HTTPBearer()
+
 
 @router.post(
     "/register",
     response_model=UserOutput,
     status_code=status.HTTP_201_CREATED,
     summary="Register User - Cria um novo usuário",
-    description=(
-            "Cria um novo usuário com endereço de email. É necessário um token JWT "
-            "de client para validar a origem da criação."
-    ),
+    description="Cria um novo usuário com endereço de email. É necessário um token JWT de client.",
 )
 def register_user(
         user_input: UserCreate,
@@ -37,15 +41,15 @@ def register_user(
         return AuthService(db).register_user(user_input)
 
     except ResourceAlreadyExistsException as e:
-        # email já existe
-        logger.warning(f"Registro duplicado: {e.details}")
+        # agora usamos e.detail ou str(e) para enviar a mensagem correta
+        msg = getattr(e, "detail", None) or str(e)
+        logger.warning(f"Registro duplicado: {msg}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=e.details
+            detail=msg
         )
 
     except HTTPException:
-        # repassa quaisquer HTTPException geradas internamente
         raise
 
     except Exception as e:
@@ -127,4 +131,39 @@ def refresh_token(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro interno no servidor."
+        )
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Logout - Revoke current access token",
+    description="Invalidates the current access token by adding it to the blacklist.",
+)
+def logout_user(
+        credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
+        db: Session = Depends(get_session),
+):
+    token = credentials.credentials
+    try:
+        # decodifica para extrair o jti e o exp
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        jti = payload.get("jti")
+        if not jti:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token does not support revocation.",
+            )
+        expires_at = datetime.fromtimestamp(payload["exp"])
+
+        # adiciona à blacklist
+        from app.adapters.outbound.persistence.repositories.token_repository import token_repository
+        token_repository.add_to_blacklist(db, jti, expires_at)
+
+        return {"detail": "Successfully logged out."}
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token.",
         )
