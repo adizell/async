@@ -13,8 +13,8 @@ from app.adapters.outbound.persistence.repositories.user_repository import UserC
 from app.adapters.outbound.persistence.repositories.client_repository import ClientCRUD
 
 # Importar instâncias singleton do CRUD
-from app.adapters.outbound.persistence.repositories.user_repository import user
-from app.adapters.outbound.persistence.repositories.client_repository import client
+from app.adapters.outbound.persistence.repositories.user_repository import UserCRUD
+from app.adapters.outbound.persistence.repositories.client_repository import ClientCRUD
 
 # Exportar todas as classes e instâncias
 __all__ = [
@@ -24,6 +24,6 @@ __all__ = [
     "ClientCRUD",
 
     # Instâncias
-    "user",
-    "client",
+    "UserCRUD",
+    "ClientCRUD",
 ]
