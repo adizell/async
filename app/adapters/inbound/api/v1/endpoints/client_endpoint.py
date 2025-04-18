@@ -150,7 +150,8 @@ async def create_client(
     try:
         from app.application.use_cases.client_use_cases import ClientService
         uc = ClientService(db_session)
-        credentials = uc.create_client()
+        # Pass the password to create_client
+        credentials = uc.create_client(admin_password=password)
 
         return templates.TemplateResponse("create_client_url.html", {
             "request": request,

@@ -223,3 +223,7 @@ class ClientCRUD(CRUDBase[Client, ClientSchema, ClientSchema], IClientRepository
             created_at=db_model.created_at,
             updated_at=db_model.updated_at
         )
+
+
+# instância pública que será usada pelos use cases
+client = ClientCRUD(Client)

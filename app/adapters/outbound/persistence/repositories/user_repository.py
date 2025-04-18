@@ -393,3 +393,7 @@ class UserCRUD(CRUDBase[User, UserCreate, UserUpdate], IUserRepository):
             groups=groups,
             permissions=permissions
         )
+
+
+# instância pública que será usada pelos use cases
+user = UserCRUD(User)

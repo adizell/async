@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Optional
 
 from app.adapters.configuration.config import settings
-from app.adapters.outbound.persistence.repositories.user_repository import UserCRUD as user_repository
+from app.adapters.outbound.persistence.repositories.user_repository import user as user_repository
 from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 from app.application.dtos.user_dto import UserCreate, TokenData, UserOutput
 from app.application.ports.inbound import IUserUseCase
