@@ -224,6 +224,43 @@ class ClientCRUD(CRUDBase[Client, ClientSchema, ClientSchema], IClientRepository
             updated_at=db_model.updated_at
         )
 
+    def delete(self, db: Session, *, id: Any) -> None:
+        """
+        Delete a client by ID.
+
+        Args:
+            db: Database session
+            id: ID of the client to delete
+
+        Raises:
+            ResourceNotFoundException: If the client is not found
+        """
+        client = self.get(db, id=id)
+        if not client:
+            raise ResourceNotFoundException(
+                detail=f"Client with ID {id} not found",
+                resource_id=id
+            )
+
+        db.delete(client)
+        db.commit()
+        return client
+
+    def list(self, db: Session, *, skip: int = 0, limit: int = 100, **filters) -> List[Client]:
+        """
+        List clients with optional filtering.
+
+        Args:
+            db: Database session
+            skip: Number of records to skip (for pagination)
+            limit: Maximum number of records to return
+            **filters: Additional filters
+
+        Returns:
+            List of Client objects
+        """
+        return self.get_multi(db, skip=skip, limit=limit, **filters)
+
 
 # instância pública que será usada pelos use cases
 client = ClientCRUD(Client)

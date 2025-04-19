@@ -394,6 +394,43 @@ class UserCRUD(CRUDBase[User, UserCreate, UserUpdate], IUserRepository):
             permissions=permissions
         )
 
+    def delete(self, db: Session, *, id: Any) -> None:
+        """
+        Delete a user by ID.
+
+        Args:
+            db: Database session
+            id: ID of the user to delete
+
+        Raises:
+            ResourceNotFoundException: If the user is not found
+        """
+        user = self.get(db, id=id)
+        if not user:
+            raise ResourceNotFoundException(
+                detail=f"User with ID {id} not found",
+                resource_id=id
+            )
+
+        db.delete(user)
+        db.commit()
+        return user
+
+    def list(self, db: Session, *, skip: int = 0, limit: int = 100, **filters) -> List[User]:
+        """
+        List users with optional filtering.
+
+        Args:
+            db: Database session
+            skip: Number of records to skip (for pagination)
+            limit: Maximum number of records to return
+            **filters: Additional filters
+
+        Returns:
+            List of User objects
+        """
+        return self.get_multi(db, skip=skip, limit=limit, **filters)
+
 
 # instância pública que será usada pelos use cases
 user = UserCRUD(User)

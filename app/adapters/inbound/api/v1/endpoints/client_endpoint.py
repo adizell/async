@@ -220,7 +220,7 @@ async def update_client_secret(
         # Atualiza o secret do client
         from app.application.use_cases.client_use_cases import ClientService
         uc = ClientService(db_session)
-        result = uc.update_client_secret(client_id=client_id)
+        result = uc.update_client_secret(client_id=client_id, admin_password=password)
 
         # Gerar token JWT com o ID do client
         token = ClientAuthManager.create_client_token(subject=str(client.id))
