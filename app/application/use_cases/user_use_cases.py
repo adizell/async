@@ -181,12 +181,19 @@ class AsyncUserService:
     # Deactivation / reactivation / deletion
     # ────────────────────────────────
     async def deactivate_user(self, user_id: UUID) -> dict[str, str]:
+        # Usar o método do repositório que já trata corretamente as senhas
+        # ao invés de atualizar diretamente
+        from app.adapters.outbound.persistence.repositories.user_repository import user_repository
+
         user = await self._get_user_by_id(user_id)
         if not user.is_active:
             return {"message": f"User '{user.email}' already inactive."}
-        user.is_active = False
-        await self.db.commit()
-        logger.info("User deactivated: %s", user.email)
+
+        # Usar update_with_password mesmo sem mudar a senha, garantindo que
+        # não atribuiremos valores diretamente
+        update_data = {"is_active": False}
+        await user_repository.update_with_password(self.db, db_obj=user, obj_in=update_data)
+
         return {"message": f"User '{user.email}' successfully deactivated."}
 
     async def reactivate_user(self, user_id: UUID) -> dict[str, str]:

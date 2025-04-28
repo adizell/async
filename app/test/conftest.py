@@ -1,6 +1,9 @@
 # app/test/conftest.py
 
 import asyncio
+import datetime
+from uuid import uuid4
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
@@ -67,31 +70,58 @@ async def test_client_token(db_session: AsyncSession) -> str:
 @pytest_asyncio.fixture
 async def test_user_and_token(async_client: AsyncClient, db_session: AsyncSession, test_client_token: str):
     """
-    Cria um novo usuário e retorna (user_data, access_token)
+    Cria um novo usuário através da API e retorna (user_data, access_token)
     """
+    # Dados do usuário para teste
+    password_raw = "TestPassword123!"
     user_data = {
-        "email": "test_user_token@example.com",
-        "password": "StrongP@ssword123"
+        "email": f"usertest-{uuid4()}@example.com",
+        "password": password_raw
     }
+
     headers = {"Authorization": f"Bearer {test_client_token}"}
 
-    # Deletar usuário se já existir
-    result = await db_session.execute(select(User).where(User.email == user_data["email"]))
-    existing_user = result.unique().scalar_one_or_none()
-    if existing_user:
-        await db_session.delete(existing_user)
-        await db_session.commit()
+    # Registrar o usuário
+    response_register = await async_client.post(
+        "/api/v1/auth/register",
+        json=user_data,
+        headers=headers
+    )
+    assert response_register.status_code in (200, 201), f"Erro ao registrar usuário: {response_register.text}"
 
-    # Registrar usuário
-    response = await async_client.post("/api/v1/auth/register", json=user_data, headers=headers)
-    assert response.status_code in (200, 201), f"Erro ao registrar usuário: {response.text}"
-
-    # Fazer login
-    headers = {"Authorization": f"Bearer {test_client_token}"}
-    response_login = await async_client.post("/api/v1/auth/login", json=user_data, headers=headers)
+    # Fazer login para obter o access token
+    response_login = await async_client.post(
+        "/api/v1/auth/login",
+        json=user_data,
+        headers=headers
+    )
     assert response_login.status_code == 200, f"Erro ao fazer login: {response_login.text}"
 
     tokens = response_login.json()
     access_token = tokens["access_token"]
 
     return user_data, access_token
+
+
+# Criação de usuário de teste
+@pytest_asyncio.fixture
+async def create_test_user(db_session: AsyncSession):
+    from app.adapters.outbound.security.auth_user_manager import UserAuthManager
+
+    # Gerar senha criptografada
+    hashed_password = await UserAuthManager.hash_password("TestPassword123!")
+
+    # Criar usuário com senha já criptografada
+    user = User(
+        id=uuid4(),
+        email=f"usertest-{uuid4()}@example.com",
+        password=hashed_password,  # Senha já criptografada
+        is_active=True,
+        is_superuser=False,
+        created_at=datetime.utcnow()
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    return user

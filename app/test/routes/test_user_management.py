@@ -21,6 +21,8 @@ def common_user_data(email="commonuser_test@example.com"):
 @pytest.mark.asyncio
 async def test_user_deactivate(async_client, db_session, test_client_token):
     """Superusuário desativa usuário comum."""
+    from app.adapters.outbound.security.auth_user_manager import UserAuthManager
+
     headers = {"Authorization": f"Bearer {test_client_token}"}
 
     # e‑mails fixos para este teste
@@ -32,6 +34,7 @@ async def test_user_deactivate(async_client, db_session, test_client_token):
     await db_session.commit()
 
     # 1) registra superuser (ainda sem flag)
+    # Usar o serviço de registro que já faz o hash da senha
     await async_client.post("/api/v1/auth/register",
                             json=superuser_data(super_email),
                             headers=headers)

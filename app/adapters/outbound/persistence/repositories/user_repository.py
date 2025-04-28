@@ -59,44 +59,44 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
 
     async def create_with_password(self, db: AsyncSession, *, obj_in: UserCreate) -> User:
         """
-        Create a new user with password validation and hashing.
-
-        Args:
-            db: Database session.
-            obj_in: Data for new user.
-
-        Returns:
-            Created user.
+        Cria um novo usuário com validação e criptografia de senha.
+        Garante que senhas sempre sejam criptografadas antes de serem salvas.
         """
         from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 
         try:
+            # Verificar se usuário já existe
             existing_user = await self.get_by_email(db, email=obj_in.email)
             if existing_user:
-                self.logger.warning(f"Attempt to create user with existing email: {obj_in.email}")
+                self.logger.warning(f"Tentativa de criar usuário com email existente: {obj_in.email}")
                 raise ResourceAlreadyExistsException(detail=f"User with email '{obj_in.email}' already exists")
 
+            # Validar senha
             is_valid, errors = InputValidator.validate_password(obj_in.password)
             if not is_valid:
                 raise InvalidCredentialsException(message="; ".join(errors))
 
+            # Converter para dicionário e extrair senha
             obj_in_data = jsonable_encoder(obj_in)
             password = obj_in_data.pop("password")
 
+            # Criar objeto e definir senha criptografada
             db_obj = User(**obj_in_data)
             db_obj.password = await UserAuthManager.hash_password(password)
 
+            # Adicionando ao grupo 'user'
             query = select(AuthGroup).where(AuthGroup.name == "user")
             result = await db.execute(query)
             user_group = result.scalar_one_or_none()
             if user_group:
                 db_obj.groups.append(user_group)
 
+            # Salvar no banco
             db.add(db_obj)
             await db.commit()
             await db.refresh(db_obj)
 
-            self.logger.info(f"User created with email: {db_obj.email}")
+            self.logger.info(f"Usuário criado com email: {db_obj.email}")
             return db_obj
 
         except ResourceAlreadyExistsException:
@@ -104,41 +104,56 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
             raise
         except SQLAlchemyError as e:
             await db.rollback()
-            self.logger.error(f"Error creating user: {e}")
-            raise DatabaseOperationException(message="Error creating user", original_error=e)
+            self.logger.error(f"Erro ao criar usuário: {e}")
+            raise DatabaseOperationException(message="Erro ao criar usuário", original_error=e)
 
     async def update_with_password(self, db: AsyncSession, *, db_obj: User,
                                    obj_in: Union[UserUpdate, Dict[str, Any]]) -> User:
         """
-        Update user information, including password if provided.
+        Atualiza informações do usuário, incluindo senha se fornecida.
+
+        Garante que senhas sempre sejam criptografadas antes de serem armazenadas.
 
         Args:
-            db: Database session.
-            db_obj: Current user object.
-            obj_in: Update fields.
+            db: Sessão de banco de dados assíncrona
+            db_obj: Objeto de usuário atual no banco de dados
+            obj_in: Dados de atualização (esquema Pydantic ou dicionário)
 
         Returns:
-            Updated user.
+            Usuário atualizado
+
+        Raises:
+            ResourceAlreadyExistsException: Se o e-mail já estiver em uso
+            InvalidCredentialsException: Se a senha não atender aos requisitos
+            DatabaseOperationException: Em caso de erro no banco de dados
         """
         from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 
         try:
+            # Converte para dicionário se for um objeto Pydantic
             update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
 
+            # Verifica duplicidade de e-mail se estiver sendo alterado
             if "email" in update_data and update_data["email"] != db_obj.email:
                 existing = await self.get_by_email(db, email=update_data["email"])
                 if existing and existing.id != db_obj.id:
-                    raise ResourceAlreadyExistsException(detail=f"Email '{update_data['email']}' is already in use")
+                    raise ResourceAlreadyExistsException(detail=f"Email '{update_data['email']}' já está em uso")
 
+            # PONTO-CHAVE: Tratamento especial para o campo 'password'
+            # Verificar e criptografar a senha se presente nos dados de atualização
             if "password" in update_data and update_data["password"]:
+                # Validar força da senha
                 is_valid, errors = InputValidator.validate_password(update_data["password"])
-                if is_valid:
-                    update_data["password"] = await UserAuthManager.hash_password(update_data["password"])
-                else:
+                if not is_valid:
                     raise InvalidCredentialsException(message="; ".join(errors))
-            elif "password" in update_data:
+
+                # Criptografar a senha antes de armazenar
+                update_data["password"] = await UserAuthManager.hash_password(update_data["password"])
+            elif "password" in update_data and not update_data["password"]:
+                # Remover o campo 'password' se estiver vazio para evitar sobrescrever com valor vazio
                 del update_data["password"]
 
+            # Atualizar o objeto com os novos valores
             return await super().update(db, db_obj=db_obj, obj_in=update_data)
 
         except ResourceAlreadyExistsException:
@@ -146,8 +161,8 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
             raise
         except SQLAlchemyError as e:
             await db.rollback()
-            self.logger.error(f"Error updating user: {e}")
-            raise DatabaseOperationException(message="Error updating user", original_error=e)
+            self.logger.error(f"Erro ao atualizar usuário: {e}")
+            raise DatabaseOperationException(message=f"Erro ao atualizar usuário: {str(e)}", original_error=e)
 
     async def authenticate(self, db: AsyncSession, *, email: str, password: str) -> Optional[User]:
         """
