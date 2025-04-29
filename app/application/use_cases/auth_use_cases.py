@@ -3,103 +3,143 @@
 """
 Service for user authentication.
 
-This module implements the service for authentication operations,
-including registration, login, and token renewal.
+This module implements the business logic for authentication operations,
+including registration, login, and token refresh, following Clean Architecture principles.
 """
 
 import logging
 import uuid
-from datetime import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+from psycopg2 import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.configuration.config import settings
-from app.adapters.outbound.persistence.repositories.user_repository import user_repository
 from app.adapters.outbound.security.auth_user_manager import UserAuthManager
-from app.application.dtos.user_dto import UserCreate, TokenData, UserOutput
-from app.domain.exceptions import InvalidCredentialsException, DatabaseOperationException
+from app.adapters.outbound.persistence.models.auth_group import AuthGroup
+from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.repositories import user_repository
+from app.domain.exceptions import (
+    ResourceAlreadyExistsException,
+    ResourceNotFoundException,
+    InvalidCredentialsException,
+    DatabaseOperationException,
+)
+from app.application.dtos.user_dto import UserCreate, TokenData
 
 logger = logging.getLogger(__name__)
 
 
 class AsyncAuthService:
     """
-    Service for user authentication.
+    Service class for user authentication.
 
-    This class implements the business logic related to
-    user authentication, including registration, login, and token refresh.
+    - Handles registration, login, and token refresh operations.
+    - Interacts with persistence (repositories) and security modules.
     """
 
     def __init__(self, db_session: AsyncSession):
         """
-        Initialize the service with a database session.
+        Initialize with a database session.
 
         Args:
-            db_session: Active SQLAlchemy session
+            db_session: Active SQLAlchemy asynchronous session.
         """
         self.db = db_session
 
-    async def register_user(self, user_input: UserCreate) -> UserOutput:
+    async def register_user(self, user_input: UserCreate) -> User:
         """
-        Register a new user in the system.
+        Register a new user.
+
+        Steps:
+        1. Ensure the default group 'user' exists.
+        2. Hash the user's password securely.
+        3. Create the user in the database.
+        4. Associate the user with the default group.
+        5. Commit transaction and return user.
 
         Args:
-            user_input: User data to register
+            user_input: Data for the new user.
 
         Returns:
-            Registered user
+            User instance.
 
         Raises:
-            ResourceAlreadyExistsException: If the email is already in use
+            ResourceAlreadyExistsException: If the email already exists.
+            ResourceNotFoundException: If the default group is missing.
         """
-        # Call the repository to create the user
-        user = await user_repository.create_with_password(self.db, obj_in=user_input)
+        try:
+            # 1. Busca o grupo padrão 'user'
+            result = await self.db.execute(
+                select(AuthGroup).where(AuthGroup.name == "user")
+            )
+            group = result.unique().scalar_one_or_none()
 
-        # Convert to DTO for response
-        return UserOutput.model_validate(user)
+            if not group:
+                raise ResourceNotFoundException(
+                    message="Default group 'user' not found. Cannot register user."
+                )
+
+            # 2. Criptografa a senha do usuário
+            hashed_password = await UserAuthManager.hash_password(user_input.password)
+            user_data = user_input.model_copy(update={"password": hashed_password})
+
+            # 3. Cria o usuário no banco
+            user = await user_repository.create(self.db, obj_in=user_data)
+
+            # 4. Associa o usuário ao grupo padrão
+            user.groups.append(group)
+
+            # 5. Salva tudo
+            await self.db.commit()
+            await self.db.refresh(user)
+
+            return user
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise ResourceAlreadyExistsException(detail="User with provided data already exists.")
 
     async def login_user(self, user_input: UserCreate) -> TokenData:
         """
-        Authenticate a user and generate access and refresh tokens.
+        Authenticate a user and generate tokens.
 
         Args:
-            user_input: User credentials
+            user_input: Login credentials.
 
         Returns:
-            Token data with access and refresh tokens
+            TokenData with access and refresh tokens.
 
         Raises:
-            InvalidCredentialsException: If credentials are invalid
+            InvalidCredentialsException: If email or password are invalid.
         """
-        # Authenticate user
+        # 1. Verifica se o email/senha estão corretos
         user = await user_repository.authenticate(
             self.db,
             email=user_input.email,
             password=user_input.password
         )
 
-        # Generate token payload using domain service
+        # 2. Gera tokens
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS)
         refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        token_id = str(uuid.uuid4())
 
-        # Generate tokens
+        token_id = str(uuid.uuid4())  # Token ID único para rastrear revogações
+
         access_token = await UserAuthManager.create_access_token(
             subject=str(user.id),
             expires_delta=access_token_expires
         )
 
-        # Generate refresh token with a unique identifier
         refresh_token = await UserAuthManager.create_refresh_token(
             subject=str(user.id),
             token_id=token_id,
             expires_delta=refresh_token_expires
         )
 
-        # Calculate expiration date to send to client
         expires_at = datetime.now(timezone.utc) + access_token_expires
 
-        # Return token data
         return TokenData(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -108,34 +148,37 @@ class AsyncAuthService:
 
     async def refresh_token(self, refresh_token: str) -> TokenData:
         """
-        Generate a new access token from a valid refresh token.
+        Refresh the authentication tokens.
 
         Args:
-            refresh_token: Refresh token
+            refresh_token: Valid refresh token.
 
         Returns:
-            New access and refresh tokens
+            New access and refresh tokens.
 
         Raises:
-            InvalidCredentialsException: If the refresh token is invalid
+            InvalidCredentialsException: If refresh token is invalid or user inactive.
+            DatabaseOperationException: If any unexpected error occurs.
         """
         try:
-            # Verify the refresh token
+            # 1. Valida o refresh token
             payload = await UserAuthManager.verify_refresh_token(refresh_token)
+
             user_id = payload.get("sub")
             token_id = payload.get("jti")
 
             if not user_id or not token_id:
-                raise InvalidCredentialsException(message="Invalid refresh token")
+                raise InvalidCredentialsException(message="Invalid refresh token.")
 
-            # Verify user exists and is active
+            # 2. Confirma se o usuário ainda existe e está ativo
             user = await user_repository.get(self.db, id=user_id)
             if not user or not user.is_active:
-                raise InvalidCredentialsException(message="User not found or inactive")
+                raise InvalidCredentialsException(message="User not found or inactive.")
 
-            # Generate new tokens
+            # 3. Gera novos tokens
             access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS)
             refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
             new_token_id = str(uuid.uuid4())
 
             new_access_token = await UserAuthManager.create_access_token(
@@ -149,10 +192,8 @@ class AsyncAuthService:
                 expires_delta=refresh_token_expires
             )
 
-            # Calculate expiration time for response
             expires_at = datetime.now(timezone.utc) + access_token_expires
 
-            # Return new token data
             return TokenData(
                 access_token=new_access_token,
                 refresh_token=new_refresh_token,
@@ -160,12 +201,11 @@ class AsyncAuthService:
             )
 
         except InvalidCredentialsException:
-            # Pass through the exception
             raise
 
         except Exception as e:
-            logger.exception(f"Error refreshing token: {str(e)}")
+            logger.exception(f"Unexpected error during token refresh: {str(e)}")
             raise DatabaseOperationException(
-                message="Error processing refresh token",
+                message="Error processing refresh token.",
                 original_error=e
             )

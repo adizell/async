@@ -13,6 +13,7 @@ from app.adapters.configuration.config import settings
 from app.adapters.outbound.persistence.database import engine, Base
 from app.adapters.inbound.api.v1.router import api_router as api_v1_router
 from app.adapters.inbound.api.v1.endpoints import client_endpoint
+from app.adapters.outbound.persistence.models.base_model import register_password_protection
 
 # ─── UNIQUE LOGGING CONFIGURATION ─────────────────────────────────────────────────
 level = logging.DEBUG if settings.DEBUG else getattr(logging, settings.LOG_LEVEL, logging.INFO)
@@ -24,6 +25,25 @@ logger = logging.getLogger(__name__)
 
 
 # ────────────────────────────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application starting up...")
+
+    # Registrar eventos de proteção de senha
+    register_password_protection()
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    app.state.cleanup_task = asyncio.create_task(periodic_cleanup())
+    yield
+    logger.info("Application shutting down...")
+    app.state.cleanup_task.cancel()
+    try:
+        await app.state.cleanup_task
+    except asyncio.CancelledError:
+        pass
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

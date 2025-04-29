@@ -6,6 +6,7 @@ from fastapi_pagination import Params, Page
 from fastapi import APIRouter, Depends, status, Query, HTTPException, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.use_cases import AsyncAuthService
 from app.shared.utils.error_responses import user_errors
 from app.shared.utils.success_responses import auth_success
 from app.application.use_cases.user_use_cases import AsyncUserService
@@ -15,23 +16,53 @@ from app.adapters.outbound.security.permissions import require_superuser
 from app.adapters.inbound.api.deps import (
     get_session,
     get_current_user,
-    get_db_session
+    get_db_session, get_current_client
 )
 from app.domain.exceptions import (
     ResourceInactiveException,
     ResourceNotFoundException,
-    InvalidCredentialsException
+    InvalidCredentialsException, ResourceAlreadyExistsException
 )
 from app.application.dtos.user_dto import (
     UserOutput,
     UserUpdate,
     UserListOutput,
     UserSelfUpdate,
+    UserCreate,
 )
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+@router.post("/register", response_model=UserOutput, status_code=status.HTTP_201_CREATED)
+async def register_user(
+        user_input: UserCreate,
+        db: AsyncSession = Depends(get_session),
+        _: str = Depends(get_current_client),
+):
+    try:
+        service = AsyncAuthService(db)
+        return await service.register_user(user_input)
+
+    except ResourceAlreadyExistsException as e:
+        msg = getattr(e, "detail", None) or str(e)
+        logger.warning(f"Duplicate registration: {msg}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=msg
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Unhandled error in registration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error."
+        )
 
 
 @router.get(

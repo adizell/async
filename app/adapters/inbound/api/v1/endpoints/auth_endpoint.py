@@ -17,8 +17,14 @@ from app.domain.exceptions import (
     ResourceAlreadyExistsException,
     InvalidCredentialsException,
     ResourceInactiveException,
+    ResourceNotFoundException,
 )
-from app.application.dtos.user_dto import UserCreate, UserOutput, TokenData, RefreshTokenRequest
+from app.application.dtos.user_dto import (
+    UserCreate,
+    UserOutput,
+    TokenData,
+    RefreshTokenRequest
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -44,6 +50,14 @@ bearer_scheme = HTTPBearer()
     """,
     responses={**auth_success, **auth_errors}
 )
+@router.post(
+    "/register",
+    response_model=UserOutput,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register User - Creates a new user",
+    description="Creates a new user account. Requires a client token.",
+    responses={**auth_success, **auth_errors}
+)
 async def register_user(
         user_input: UserCreate,
         db: AsyncSession = Depends(get_session),
@@ -53,17 +67,19 @@ async def register_user(
         service = AsyncAuthService(db)
         return await service.register_user(user_input)
 
-    except ResourceAlreadyExistsException as e:
-        # Use e.detail or str(e) to send the correct message
-        msg = getattr(e, "detail", None) or str(e)
-        logger.warning(f"Duplicate registration: {msg}")
+    except ResourceNotFoundException as e:
+        logger.warning(f"Resource not found during registration: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=msg
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
 
-    except HTTPException:
-        raise
+    except ResourceAlreadyExistsException as e:
+        logger.warning(f"Duplicate registration: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )
 
     except Exception as e:
         logger.exception(f"Unhandled error in registration: {e}")
@@ -77,12 +93,8 @@ async def register_user(
     "/login",
     response_model=TokenData,
     summary="Login User - Generates access token",
-    description=(
-            "Authenticates a user (email/password) and returns a JWT token. "
-            "Login attempts with inactive users will result in an error. "
-            "Requires a valid client token."
-    ),
-    responses={**auth_success, **auth_errors}
+    description="Authenticates a user and returns a JWT token. Requires a valid client token.",
+    responses={**auth_success, **auth_errors},
 )
 async def login_user(
         user_input: UserCreate,
@@ -94,10 +106,10 @@ async def login_user(
         return await service.login_user(user_input)
 
     except InvalidCredentialsException as e:
-        logger.warning(f"Invalid credentials: {e.details}")
+        logger.warning(f"Invalid credentials: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.details,
+            detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -177,7 +189,6 @@ async def logout_user(
         user_id = payload.get("sub")
         token_type = payload.get("type", "user")
 
-        # 🔥 Aqui é a correção:
         exp_timestamp = payload.get("exp")
         expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc).replace(tzinfo=None)
         revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)

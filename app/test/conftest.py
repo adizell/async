@@ -8,7 +8,9 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete, or_
+
+from app.adapters.inbound.api.deps import logger
 from app.main import app
 from dotenv import load_dotenv
 from app.adapters.outbound.persistence.database import get_db
@@ -125,3 +127,46 @@ async def create_test_user(db_session: AsyncSession):
     await db_session.refresh(user)
 
     return user
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def cleanup_after_test(db_session: AsyncSession):
+    """
+    Fixture para limpar o banco de dados após cada teste.
+    O parâmetro autouse=True garante que esta fixture seja executada
+    automaticamente para todos os testes.
+    """
+    # Primeiro, permitir que o teste seja executado
+    yield
+
+    # Após o teste, limpar os dados criados durante os testes
+    try:
+        # Limpar usuários de teste (que contêm 'test' ou padrões específicos no email)
+        await db_session.execute(
+            delete(User).where(
+                or_(
+                    User.email.like("%test%"),
+                    User.email.like("%example.com"),
+                    # Outros padrões de identificação de dados de teste
+                    User.email.like("userdeactivate-%"),
+                    User.email.like("userreactivate-%"),
+                    User.email.like("superuser-%")
+                )
+            )
+        )
+
+        # Limpar tokens na blacklist criados durante os testes
+        # Se houver uma tabela de tokens na blacklist
+        # await db_session.execute(delete(TokenBlacklist).where(...))
+
+        # Limpar outros dados de teste em outras tabelas conforme necessário
+        # await db_session.execute(delete(Client).where(Client.client_id.like("%test%")))
+
+        # Confirmar as alterações
+        await db_session.commit()
+
+    except Exception as e:
+        # Em caso de erro, fazer rollback e registrar
+        await db_session.rollback()
+        logger.error(f"Erro ao limpar dados após teste: {str(e)}")
+        raise
