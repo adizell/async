@@ -8,7 +8,7 @@ ou sistemas externos autorizados a acessar a API.
 """
 
 from sqlalchemy import Column, BigInteger, String, Boolean, DateTime, func
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 
 
 class Client(Base):

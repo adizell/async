@@ -1,13 +1,13 @@
-# app/test/unit/test_password_protection.py
+# app/test/unit/user_group/test_password_protection.py
 
 # Para rodar o script
-# pytest app/test/unit/test_password_protection.py
+# pytest app/test/unit/user_group/test_password_protection.py -v
 
 import re
 import pytest
 from uuid import uuid4
-from app.adapters.outbound.persistence.models.user_model import User
-from app.adapters.outbound.persistence.models.base_model import register_password_protection
+from app.adapters.outbound.persistence.models.user_group.user_model import User
+from app.adapters.outbound.persistence.models.user_group.base_model import register_password_protection
 from sqlalchemy.ext.asyncio import AsyncSession
 
 @pytest.mark.asyncio

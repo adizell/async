@@ -18,11 +18,13 @@ class DomainException(Exception):
             self,
             message: str,
             internal_code: Optional[str] = None,
-            details: Optional[Dict[str, Any]] = None
+            details: Optional[Dict[str, Any]] = None,
+            status_code: int = 400  # Default genérico
     ):
         super().__init__(message)
         self.internal_code = internal_code
         self.details = details or {}
+        self.status_code = status_code
 
 
 class ResourceNotFoundException(DomainException):
@@ -57,7 +59,8 @@ class PermissionDeniedException(DomainException):
         permission_info = f" (Permissão necessária: {permission})" if permission else ""
         super().__init__(
             message=f"{message}{permission_info}",
-            internal_code="PERMISSION_DENIED"
+            internal_code="PERMISSION_DENIED",
+            status_code=403
         )
 
 

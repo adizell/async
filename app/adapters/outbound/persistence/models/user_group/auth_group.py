@@ -9,7 +9,7 @@ para facilitar o gerenciamento de acesso.
 
 from sqlalchemy import Column, BigInteger, String
 from sqlalchemy.orm import relationship
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 
 
 class AuthGroup(Base):

@@ -5,6 +5,7 @@ from app.shared.middleware.logging_middleware import AsyncRequestLoggingMiddlewa
 from app.shared.middleware.csrf_middleware import AsyncCSRFProtectionMiddleware
 from app.shared.middleware.rate_limiting_middleware import AsyncRateLimitingMiddleware
 from app.shared.middleware.security_headers_middleware import AsyncSecurityHeadersMiddleware
+from app.shared.middleware.error_handler_middleware import ErrorHandlerMiddleware
 
 # Export all for easy imports
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "AsyncRequestLoggingMiddleware",
     "AsyncCSRFProtectionMiddleware",
     "AsyncRateLimitingMiddleware",
-    "AsyncSecurityHeadersMiddleware"
+    "AsyncSecurityHeadersMiddleware",
+    "ErrorHandlerMiddleware"
 ]

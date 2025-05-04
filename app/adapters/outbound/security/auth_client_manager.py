@@ -1,73 +1,85 @@
-# app/adapters/outbound/security/auth_client_manager.py (async version)
+# app/adapters/outbound/security/auth_client_manager.py
 
-from datetime import datetime, timedelta
+import uuid
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Dict
+
+import bcrypt
 from jose import jwt, JWTError
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 
 from app.adapters.configuration.config import settings
+from app.adapters.outbound.security.jwt_config import JWT_SECRET, JWT_ALGORITHM
 
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-DEFAULT_EXPIRES_DAYS = settings.ACCESS_TOKEN_CLIENT_EXPIRE_DIAS
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 class ClientAuthManager:
     """
-    Authentication manager for JWT tokens of clients (authorized applications).
+    Authentication Manager for Client operations.
+
+    Responsibilities:
+    - Password hashing and verification
+    - Client token creation and validation
     """
 
     crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    @classmethod
-    async def create_client_token(cls, subject: str, expires_delta: timedelta = None) -> str:
-        """
-        Create a JWT token for the client with 'sub' equal to subject and type "client".
-        """
-        if expires_delta is None:
-            expires_delta = timedelta(days=DEFAULT_EXPIRES_DAYS)
-
-        expire = datetime.utcnow() + expires_delta
-        payload = {
-            "sub": str(subject),
-            "exp": int(expire.timestamp()),
-            "type": "client",
-        }
-
-        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
-    @classmethod
-    async def verify_client_token(cls, token: str) -> dict:
-        """
-        Decode and validate the client's JWT token.
-
-        Returns the payload if the token is valid and of type "client".
-        Raises HTTPException if invalid or expired.
-        """
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("type") != "client":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid client token: incorrect type.",
-                )
-            return payload
-        except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired client token.",
-            )
+    # Client token expiration time
+    CLIENT_TOKEN_EXPIRE_DAYS = (
+        settings.ACCESS_TOKEN_CLIENT_EXPIRE_DIAS
+        if hasattr(settings, "ACCESS_TOKEN_CLIENT_EXPIRE_DIAS")
+        else 365
+    )
 
     @classmethod
     async def hash_password(cls, password: str) -> str:
-        """
-        Generate secure password hash for storage in the database.
-        """
+        """Asynchronously hash a password."""
         return cls.crypt_context.hash(password)
 
     @classmethod
     async def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
-        """
-        Compare plain text password with stored hash.
-        """
+        """Verify a plain password against a hashed password."""
         return cls.crypt_context.verify(plain_password, hashed_password)
+
+    @classmethod
+    async def create_client_token(
+        cls, subject: str, expires_delta: timedelta = None
+    ) -> str:
+        """Create a client token for authentication."""
+        if expires_delta is None:
+            expires_delta = timedelta(days=cls.CLIENT_TOKEN_EXPIRE_DAYS)
+
+        expire = datetime.now(timezone.utc) + expires_delta
+        jti = str(uuid.uuid4())
+
+        payload = {
+            "sub": subject,
+            "exp": int(expire.timestamp()),
+            "type": "client",
+            "jti": jti,
+        }
+
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        logger.debug(f"Client token created for subject={subject}")
+        return token
+
+    @classmethod
+    async def verify_client_token(cls, token: str) -> Dict:
+        """
+        Validate a client token. Raises JWTError if invalid, expired, or type mismatch.
+        """
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+            if payload.get("type") != "client":
+                logger.warning("Client token with incorrect type detected.")
+                raise JWTError("Invalid token: incorrect type.")
+
+            return payload
+
+        except JWTError as e:
+            logger.warning("Invalid or expired client token: %s", str(e))
+            raise

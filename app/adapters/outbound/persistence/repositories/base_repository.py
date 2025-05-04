@@ -23,7 +23,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.future import select
 import logging
 
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 from app.domain.exceptions import (
     ResourceNotFoundException,
     ResourceAlreadyExistsException,

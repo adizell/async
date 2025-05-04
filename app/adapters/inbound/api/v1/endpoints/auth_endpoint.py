@@ -1,35 +1,42 @@
-# app/adapters/inbound/api/v1/endpoints/auth_endpoint.py (async version)
+# app/adapters/inbound/api/v1/endpoints/auth_endpoint.py
 
 import logging
 from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from jose import jwt, JWTError
 
-from app.adapters.outbound.persistence.repositories import token_repository
-from app.shared.utils.error_responses import auth_errors
-from app.shared.utils.success_responses import auth_success
-from app.application.use_cases.auth_use_cases import AsyncAuthService
-from app.adapters.inbound.api.deps import get_session, get_current_client
 from app.adapters.configuration.config import settings
-from app.domain.exceptions import (
-    ResourceAlreadyExistsException,
-    InvalidCredentialsException,
-    ResourceInactiveException,
-    ResourceNotFoundException,
-)
+from app.adapters.inbound.api.deps import get_session, get_permissions_current_client
+from app.adapters.outbound.persistence.repositories import token_repository
+from app.application.use_cases.auth_use_cases import AsyncAuthService
 from app.application.dtos.user_dto import (
+    RefreshTokenRequest,
     UserCreate,
     UserOutput,
     TokenData,
-    RefreshTokenRequest
+    UserLogin
 )
+from app.domain.exceptions import (
+    ResourceAlreadyExistsException,
+    ResourceNotFoundException,
+    InvalidCredentialsException,
+    ResourceInactiveException,
+    DatabaseOperationException,
+)
+from app.shared.utils.error_responses import auth_errors
+from app.shared.utils.success_responses import auth_success
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
 
-# Bearer scheme to extract token from Authorization header
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"],
+    responses={404: {"description": "Not found"}}
+)
+
 bearer_scheme = HTTPBearer()
 
 
@@ -37,174 +44,118 @@ bearer_scheme = HTTPBearer()
     "/register",
     response_model=UserOutput,
     status_code=status.HTTP_201_CREATED,
-    summary="Register User - Creates a new user",
-    description="""
-    Creates a new user with email address. A client JWT token is required.
-
-    The password must meet the following criteria:
-    - Minimum of 8 characters
-    - At least one uppercase letter
-    - At least one lowercase letter
-    - At least one number
-    - At least one special character (such as !@#$%^&*)
-    """,
-    responses={**auth_success, **auth_errors}
-)
-@router.post(
-    "/register",
-    response_model=UserOutput,
-    status_code=status.HTTP_201_CREATED,
-    summary="Register User - Creates a new user",
-    description="Creates a new user account. Requires a client token.",
+    summary="Register a new user",
+    description="Registers a new user. Requires a valid client token.",
     responses={**auth_success, **auth_errors}
 )
 async def register_user(
         user_input: UserCreate,
         db: AsyncSession = Depends(get_session),
-        _: str = Depends(get_current_client),
+        _: str = Depends(get_permissions_current_client)
 ):
+    service = AsyncAuthService(db)
     try:
-        service = AsyncAuthService(db)
         return await service.register_user(user_input)
-
-    except ResourceNotFoundException as e:
-        logger.warning(f"Resource not found during registration: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
     except ResourceAlreadyExistsException as e:
-        logger.warning(f"Duplicate registration: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
-
+        logger.warning(f"Duplicate registration attempt: {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ResourceNotFoundException as e:
+        logger.warning(f"Default group not found during registration: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.exception(f"Unhandled error in registration: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error."
-        )
+        logger.exception(f"Unexpected error during registration: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")
 
 
 @router.post(
     "/login",
     response_model=TokenData,
-    summary="Login User - Generates access token",
-    description="Authenticates a user and returns a JWT token. Requires a valid client token.",
-    responses={**auth_success, **auth_errors},
+    status_code=status.HTTP_200_OK,
+    summary="Login user",
+    description="Authenticates user credentials and returns a JWT token.",
+    responses={**auth_success, **auth_errors}
 )
 async def login_user(
-        user_input: UserCreate,
+        user_input: UserLogin,
         db: AsyncSession = Depends(get_session),
-        _: str = Depends(get_current_client),
+        _: str = Depends(get_permissions_current_client)
 ):
+    service = AsyncAuthService(db)
     try:
-        service = AsyncAuthService(db)
         return await service.login_user(user_input)
-
     except InvalidCredentialsException as e:
-        logger.warning(f"Invalid credentials: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    except ResourceInactiveException:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive user account. Contact the administrator.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+        logger.warning(f"Invalid login credentials: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e),
+                            headers={"WWW-Authenticate": "Bearer"})
+    except ResourceInactiveException as e:
+        logger.warning(f"Inactive user trying to login: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e),
+                            headers={"WWW-Authenticate": "Bearer"})
     except Exception as e:
-        logger.exception(f"Unhandled error in login: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error."
-        )
+        logger.exception(f"Unexpected error during login: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")
 
 
 @router.post(
     "/refresh",
     response_model=TokenData,
-    summary="Refresh Token - Renews the access token",
-    description=(
-            "Generates a new access token from a valid refresh token. "
-            "Requires a valid client token."
-    ),
+    status_code=status.HTTP_200_OK,
+    summary="Refresh authentication token",
+    description="Generates new access and refresh tokens from a valid refresh token.",
     responses={**auth_success, **auth_errors}
 )
 async def refresh_token(
         refresh_data: RefreshTokenRequest,
         db: AsyncSession = Depends(get_session),
-        _: str = Depends(get_current_client),
+        _: str = Depends(get_permissions_current_client)
 ):
+    service = AsyncAuthService(db)
     try:
-        service = AsyncAuthService(db)
         return await service.refresh_token(refresh_data.refresh_token)
-
     except InvalidCredentialsException as e:
-        logger.warning(f"Invalid refresh: {e.details}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.details,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+        logger.warning(f"Invalid refresh attempt: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e),
+                            headers={"WWW-Authenticate": "Bearer"})
+    except DatabaseOperationException as e:
+        logger.exception(f"Database error during token refresh: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")
     except Exception as e:
-        logger.exception(f"Error refreshing token: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error."
-        )
+        logger.exception(f"Unexpected error during refresh: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")
 
 
 @router.post(
     "/logout",
     status_code=status.HTTP_200_OK,
-    summary="Logout - Revoke current access token",
-    description="Invalidates the current access token by adding it to the blacklist.",
+    summary="Logout user",
+    description="Revokes the current access token by blacklisting it.",
     responses={**auth_success, **auth_errors}
 )
 async def logout_user(
         credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_session),
+        db: AsyncSession = Depends(get_session)
 ):
     token = credentials.credentials
     try:
-        # Decodificar token para obter payload
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         jti = payload.get("jti")
         if not jti:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token does not support revocation.",
-            )
-
-        # Extrair user_id do subject do token
-        user_id = payload.get("sub")
-        token_type = payload.get("type", "user")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token does not contain JTI.")
 
         exp_timestamp = payload.get("exp")
-        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc).replace(tzinfo=None)
-        revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        # expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        expires_at = datetime.utcfromtimestamp(exp_timestamp)
+        revoked_at = datetime.utcnow()
 
-        # Adicionar à blacklist
         await token_repository.add_to_blacklist(
-            db,
-            jti=jti,
-            expires_at=expires_at,
-            revoked_at=revoked_at
+            db, jti=jti, expires_at=expires_at, revoked_at=revoked_at
         )
 
         return {"detail": "Successfully logged out."}
 
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token.",
-        )
+    except JWTError as e:
+        logger.warning(f"Invalid token during logout: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+    except Exception as e:
+        logger.exception(f"Unexpected error during logout: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")

@@ -1,11 +1,11 @@
-# app/test/routes/test_user_management.py
+# app/test/routes/user_group/test_user_management.py
 
 # Para Rodar o Script:
-# pytest app/test/routes/test_user_management.py -v
+# pytest app/test/routes/user_group/test_user_management.py -v
 
 import pytest
 from sqlalchemy import select, delete
-from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.models.user_group.user_model import User
 
 
 # Helpers ────────────────────────────────────────────────────────────────────
@@ -21,7 +21,6 @@ def common_user_data(email="commonuser_test@example.com"):
 @pytest.mark.asyncio
 async def test_user_deactivate(async_client, db_session, test_client_token):
     """Superusuário desativa usuário comum."""
-    from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 
     headers = {"Authorization": f"Bearer {test_client_token}"}
 

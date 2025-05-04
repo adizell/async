@@ -15,12 +15,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 
 from app.adapters.outbound.persistence.database import get_db
-from app.adapters.outbound.persistence.models.user_model import User
-from app.adapters.outbound.persistence.models.client_model import Client
-from app.adapters.outbound.persistence.repositories.token_repository import token_repository
-from app.adapters.outbound.persistence.repositories.user_repository import user_repository
-from app.adapters.outbound.persistence.repositories.client_repository import client_repository
+from app.adapters.outbound.persistence.models.user_group.user_model import User
+from app.adapters.outbound.persistence.models.user_group.client_model import Client
+from app.adapters.outbound.persistence.repositories.token_repository import (
+    token_repository,
+)
+from app.adapters.outbound.persistence.repositories.user_repository import (
+    user_repository,
+)
+from app.adapters.outbound.persistence.repositories.client_repository import (
+    client_repository,
+)
 from app.adapters.outbound.security.auth_client_manager import ClientAuthManager
+from app.adapters.outbound.security.jwt_config import JWT_SECRET, JWT_ALGORITHM
 from app.adapters.configuration.config import settings
 
 # Configure logger
@@ -51,9 +58,10 @@ get_db_session = get_db
 # Client Token Authentication
 ########################################################################
 
+
 async def verify_client_token(
-        credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_db_session),
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
+    db: AsyncSession = Depends(get_db_session),
 ) -> str:
     """
     Verify and decode a client JWT token.
@@ -97,9 +105,9 @@ async def verify_client_token(
         )
 
 
-async def get_current_client(
-        credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_db_session),
+async def get_permissions_current_client(
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
+    db: AsyncSession = Depends(get_db_session),
 ) -> Client:
     """
     Get the current client from the token.
@@ -130,7 +138,9 @@ async def get_current_client(
         try:
             client_id = int(client_id)
         except (ValueError, TypeError):
-            logger.warning(f"Invalid client token: 'sub' is not an integer ({client_id})")
+            logger.warning(
+                f"Invalid client token: 'sub' is not an integer ({client_id})"
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid client token: 'sub' is not an integer.",
@@ -161,9 +171,10 @@ async def get_current_client(
 # User Token Authentication
 ########################################################################
 
-async def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-        db: AsyncSession = Depends(get_session),
+
+async def get_permissions_current_user(
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
+    db: AsyncSession = Depends(get_session),
 ) -> User:
     """
     Get the current user from the token.
@@ -180,7 +191,7 @@ async def get_current_user(
     """
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("sub")
         jti = payload.get("jti")  # Importante: extrair o JTI (token ID)
 

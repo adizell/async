@@ -1,11 +1,11 @@
-# app/test/routes/test_auth_edge_cases.py
+# app/test/routes/user_group/test_auth_edge_cases.py
 
 # Para rodar:
-# pytest app/test/routes/test_auth_edge_cases.py -v
+# pytest app/test/routes/user_group/test_auth_edge_cases.py -v
 
 import pytest
 from sqlalchemy import select
-from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.models.user_group.user_model import User
 
 
 # 🔥 Fixture auxiliar para gerar dados válidos de usuário

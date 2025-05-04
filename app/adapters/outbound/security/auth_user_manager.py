@@ -1,120 +1,152 @@
-# app/adapters/outbound/security/auth_user_manager.py (async version)
+# app/adapters/outbound/security/auth_user_manager.py
 
 import uuid
+import logging
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import jwt, JWTError
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
-import bcrypt  # ⬅️ IMPORTANTE para o sync
 
 from app.adapters.configuration.config import settings
-from app.adapters.outbound.persistence.repositories.token_repository import token_repository
+from app.adapters.outbound.security.jwt_config import JWT_SECRET, JWT_ALGORITHM
+from app.domain.exceptions import InvalidCredentialsException
 
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-DEFAULT_EXPIRES_MIN = settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS
+# Configurar logger
+logger = logging.getLogger(__name__)
+
+# Configurações de expiração
+_ACCESS_TOKEN_EXPIRE_MINUTES: int = settings.ACCESS_TOKEN_USER_EXPIRE_MINUTOS
+_REFRESH_TOKEN_EXPIRE_DAYS: int = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 
 class UserAuthManager:
     """
-    JWT authentication manager for users.
+    Authentication Manager for User operations.
+
+    Responsibilities:
+    - Password hashing and verification
+    - Access and refresh token creation and validation
     """
 
     crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+    # ———— PASSWORD METHODS ————
+
     @classmethod
     async def hash_password(cls, password: str) -> str:
-        """
-        Assíncrono: usado normalmente nas rotas, services, API.
-        """
+        """Asynchronously hash a password."""
         return cls.crypt_context.hash(password)
 
     @staticmethod
     def hash_password_sync(password: str) -> str:
-        """
-        Síncrono: usado em eventos ORM (como before_insert, before_update).
-        """
-        password_bytes = password.encode('utf-8')
+        """Synchronously hash a password (for ORM hooks)."""
+        password_bytes = password.encode("utf-8")
         hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
-        return hashed.decode('utf-8')
+        return hashed.decode("utf-8")
 
     @classmethod
     async def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
-        """Verifica se a senha em texto corresponde ao hash."""
+        """Verify a plain password against a hashed password."""
         return cls.crypt_context.verify(plain_password, hashed_password)
 
+    # ———— ACCESS TOKEN METHODS ————
+
     @classmethod
-    async def create_access_token(cls, subject: str, expires_delta: timedelta = None) -> str:
-        """Cria token JWT de acesso."""
+    async def create_access_token(
+        cls, subject: str, expires_delta: timedelta = None
+    ) -> str:
+        """Create an access token for authentication."""
         if expires_delta is None:
-            expires_delta = timedelta(minutes=DEFAULT_EXPIRES_MIN)
+            expires_delta = timedelta(minutes=_ACCESS_TOKEN_EXPIRE_MINUTES)
 
         expire = datetime.now(timezone.utc) + expires_delta
         jti = str(uuid.uuid4())
 
         payload = {
-            "sub": str(subject),
+            "sub": subject,
             "exp": int(expire.timestamp()),
             "type": "user",
             "jti": jti,
         }
-        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        logger.debug(f"Access token created for subject={subject}")
+        return token
 
     @classmethod
-    async def verify_access_token(cls, token: str, db: 'AsyncSession' = None) -> dict:
-        """Valida o access token."""
+    async def verify_access_token(cls, token: str, db: "AsyncSession" = None) -> dict:
+        """
+        Validate an access token. Raises HTTPException if invalid, expired, or revoked.
+        """
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
             if payload.get("type") != "user":
+                logger.warning("Access token with incorrect type detected.")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid token: incorrect type."
+                    detail="Invalid token: incorrect type.",
                 )
 
-            if db and payload.get("jti") and await token_repository.is_blacklisted(db, payload["jti"]):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token revoked."
+            if db and payload.get("jti"):
+                from app.adapters.outbound.persistence.repositories import (
+                    token_repository,
                 )
+
+                if await token_repository.is_blacklisted(db, payload["jti"]):
+                    logger.warning("Revoked token used: jti=%s", payload["jti"])
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Token revoked.",
+                    )
 
             return payload
 
-        except JWTError:
+        except JWTError as e:
+            logger.warning("Invalid or expired access token: %s", str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token."
+                detail="Invalid or expired token.",
             )
 
+    # ———— REFRESH TOKEN METHODS ————
+
     @classmethod
-    async def create_refresh_token(cls, subject: str, token_id: str, expires_delta: timedelta = None) -> str:
-        """Cria token de refresh."""
+    async def create_refresh_token(
+        cls, subject: str, token_id: str, expires_delta: timedelta = None
+    ) -> str:
+        """Create a refresh token."""
         if expires_delta is None:
-            expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+            expires_delta = timedelta(days=_REFRESH_TOKEN_EXPIRE_DAYS)
 
         expire = datetime.now(timezone.utc) + expires_delta
         payload = {
-            "sub": str(subject),
+            "sub": subject,
             "exp": int(expire.timestamp()),
             "type": "refresh",
             "jti": token_id,
         }
-        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        logger.debug(f"Refresh token created for subject={subject}")
+        return token
 
     @classmethod
     async def verify_refresh_token(cls, token: str) -> dict:
-        """Valida o refresh token."""
+        """
+        Validate a refresh token. Raises InvalidCredentialsException if invalid or expired.
+        """
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
             if payload.get("type") != "refresh":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid refresh token."
-                )
+                logger.warning("Invalid refresh token type: %s", payload.get("type"))
+                raise InvalidCredentialsException(message="Invalid refresh token type.")
+
             return payload
-        except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired refresh token."
+
+        except JWTError as e:
+            logger.warning("Invalid or expired refresh token: %s", str(e))
+            raise InvalidCredentialsException(
+                message="Invalid or expired refresh token."
             )

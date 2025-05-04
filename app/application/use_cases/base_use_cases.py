@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import logging
 
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 from app.domain.exceptions import (
     ResourceNotFoundException,
     ResourceAlreadyExistsException,

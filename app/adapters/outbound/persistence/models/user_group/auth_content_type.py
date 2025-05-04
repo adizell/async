@@ -9,7 +9,7 @@ para o sistema de permissões, agrupando permissões relacionadas.
 
 from sqlalchemy import Column, BigInteger, String, Index
 from sqlalchemy.orm import relationship
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 
 
 class AuthContentType(Base):

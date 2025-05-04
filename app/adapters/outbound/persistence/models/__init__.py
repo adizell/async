@@ -8,18 +8,18 @@ facilitando a importação e uso em outros módulos.
 """
 
 # Importar Base
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 
 # Importar modelos principais
-from app.adapters.outbound.persistence.models.user_model import User, user_access_groups, user_access_permission
-from app.adapters.outbound.persistence.models.client_model import Client
+from app.adapters.outbound.persistence.models.user_group.user_model import User, user_access_groups, user_access_permission
+from app.adapters.outbound.persistence.models.user_group.client_model import Client
 
 # Importar modelos de autorização
-from app.adapters.outbound.persistence.models.auth_group import AuthGroup
-from app.adapters.outbound.persistence.models.auth_permission import AuthPermission
-from app.adapters.outbound.persistence.models.auth_content_type import AuthContentType
-from app.adapters.outbound.persistence.models.auth_group_permissions import auth_group_permissions
-from app.adapters.outbound.persistence.models.token_blacklist_model import TokenBlacklist
+from app.adapters.outbound.persistence.models.user_group.auth_group import AuthGroup
+from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
+from app.adapters.outbound.persistence.models.user_group.auth_content_type import AuthContentType
+from app.adapters.outbound.persistence.models.user_group.auth_group_permissions import auth_group_permissions
+from app.adapters.outbound.persistence.models.user_group.token_blacklist_model import TokenBlacklist
 
 # Exportar todos os modelos
 __all__ = [

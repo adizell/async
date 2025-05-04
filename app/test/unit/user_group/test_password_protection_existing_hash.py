@@ -1,7 +1,7 @@
-# app/test/unit/test_password_protection_existing_hash.py
+# app/test/unit/user_group/test_password_protection_existing_hash.py
 
 # Para rodar o script
-# pytest app/test/unit/test_password_protection_existing_hash.py
+# pytest app/test/unit/user_group/test_password_protection_existing_hash.py -v
 
 import pytest
 from app.shared.middleware.logging_middleware import PasswordProtectionMiddleware

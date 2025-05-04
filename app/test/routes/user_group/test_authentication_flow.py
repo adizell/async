@@ -1,12 +1,11 @@
-# app/test/routes/test_authentication_flow.py
+# app/test/routes/user_group/test_authentication_flow.py
 
 # Para Rodar o Script:
-# pytest app/test/routes/test_authentication_flow.py -v
+# pytest app/test/routes/user_group/test_authentication_flow.py -v
 
-import uuid
 import pytest
 from sqlalchemy import select
-from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.models.user_group.user_model import User
 
 
 # 🔥 Fixture interna só para gerar dados do usuário dinamicamente

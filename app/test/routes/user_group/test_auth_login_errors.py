@@ -1,7 +1,7 @@
-# app/test/routes/test_auth_login_errors.py
+# app/test/routes/user_group/test_auth_login_errors.py
 
 # Para rodar o arquivo
-# pytest app/test/routes/test_auth_login_errors.py -v
+# pytest app/test/routes/user_group/test_auth_login_errors.py -v
 
 """
 Testes de autenticação: login com credenciais inválidas.
@@ -33,5 +33,5 @@ async def test_login_with_nonexistent_user(async_client, test_client_token):
     response_json = response.json()
 
     assert "detail" in response_json, "Resposta deveria conter o campo 'detail'."
-    assert response_json[
-               "detail"] == "Incorrect email or password", "Mensagem deveria ser 'Incorrect email or password'."
+    assert "Incorrect email or password" in response_json[
+        "detail"], "Mensagem deveria conter 'Incorrect email or password'."

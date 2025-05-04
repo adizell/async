@@ -14,8 +14,8 @@ from app.adapters.inbound.api.deps import logger
 from app.main import app
 from dotenv import load_dotenv
 from app.adapters.outbound.persistence.database import get_db
-from app.adapters.outbound.persistence.models.client_model import Client
-from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.models.user_group.client_model import Client
+from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.adapters.outbound.persistence.repositories.client_repository import client_repository
 from app.adapters.outbound.security.auth_client_manager import ClientAuthManager
 

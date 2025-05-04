@@ -14,11 +14,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import SQLAlchemyError
 import logging
+import os
 
 from app.adapters.inbound.api.deps import get_db_session
 from app.adapters.outbound.security.token_store import TokenStore
 from app.adapters.outbound.security.auth_client_manager import ClientAuthManager
-from app.adapters.outbound.persistence.models.client_model import Client
+from app.adapters.outbound.persistence.models.user_group.client_model import Client
+from app.adapters.configuration.config import settings
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -65,6 +67,26 @@ async def client_login(
         HTMLResponse: Resposta com template renderizado
     """
     try:
+        # Debug das configurações
+        logger.debug(f"SECRET_KEY exists in env: {bool(os.getenv('SECRET_KEY'))}")
+        logger.debug(f"SECRET_KEY value: {'*' * 10}")  # Não exponha a chave completa
+        logger.debug(f"ALGORITHM exists in env: {bool(os.getenv('ALGORITHM'))}")
+        logger.debug(f"ALGORITHM value: {os.getenv('ALGORITHM')}")
+
+        # Verifique também as configurações via settings
+        logger.debug(f"Settings SECRET_KEY: {hasattr(settings, 'SECRET_KEY')}")
+        logger.debug(f"Settings SECRET_KEY: {hasattr(settings, 'SECRET_KEY')}")
+
+        # SecretStr precisa ser acessado com .get_secret_value()
+        if hasattr(settings, 'SECRET_KEY'):
+            try:
+                # Tenta acessar como SecretStr
+                secret_key_value = settings.SECRET_KEY.get_secret_value()
+                logger.debug(f"Settings SECRET_KEY value: {secret_key_value[:10]}***")
+            except AttributeError:
+                # Se não for SecretStr, trata como string normal
+                logger.debug(f"Settings SECRET_KEY value: {str(settings.SECRET_KEY)[:10]}***")
+
         # Valida a senha contra os hashes armazenados
         if not TokenStore.validate(password, ClientAuthManager.crypt_context):
             logger.warning(f"Tentativa de login com senha inválida para client: {username}")
@@ -92,6 +114,9 @@ async def client_login(
                 "request": request,
                 "error": "Este Client está inativo. Por favor, contate o administrador do sistema."
             })
+
+        # Log antes de criar o token
+        logger.debug("Tentando criar token JWT...")
 
         # Gera token com o ID do client (convertendo para string para garantir compatibilidade)
         token = await ClientAuthManager.create_client_token(subject=str(client.id))

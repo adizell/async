@@ -4,16 +4,30 @@
 Application Settings Configuration
 """
 
-from typing import Optional, List, Union
-from logging import getLevelName
-from pydantic import PostgresDsn, Field, field_validator, ConfigDict
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# configura corretamente para a raiz do projeto
+env_path = Path(__file__).parent.parent.parent.parent / ".env"
+load_dotenv(env_path, verbose=True)
+
+from pydantic import SecretStr, AnyHttpUrl, PostgresDsn, Field, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
+from logging import getLevelName
+from typing import Optional, List, Union
 
 
 class Settings(BaseSettings):
     """
     Application Settings for environment configuration, database, auth, logging, and security.
     """
+    model_config = ConfigDict(
+        env_file=str(env_path),
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # General Project Info
     PROJECT_NAME: str = Field(default="FastAPI Async Project", description="Name of the project")
@@ -31,12 +45,12 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_HOST: str
     POSTGRES_PORT: int
-    DATABASE_URL: Optional[PostgresDsn] = None
+    DATABASE_URL: Optional[PostgresDsn] = Field(default=None, description="Database connection URL")
     TEST_MODE: bool = Field(default=False, description="Enable test mode (use test database)")
     TEST_POSTGRES_DB: Optional[str] = Field(default=None, description="Name of the test database")
 
     # Auth Settings
-    SECRET_KEY: str
+    SECRET_KEY: SecretStr
     ALGORITHM: str = Field(default="HS256", description="JWT algorithm")
     ACCESS_TOKEN_USER_EXPIRE_MINUTOS: int = Field(default=120, description="Access token expiration time (minutes)")
     ACCESS_TOKEN_CLIENT_EXPIRE_DIAS: int = Field(default=365, description="Client token expiration time (days)")
@@ -44,22 +58,65 @@ class Settings(BaseSettings):
 
     # Security (CORS and CSRF)
     BASE_URL: str = Field(default="http://localhost:8000", description="Base URL of the application")
-    CORS_ORIGINS: List[str] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
-                                    description="Allowed CORS origins")
-    ALLOWED_ORIGINS: List[str] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
-                                       description="Allowed Origins for CSRF")
+    CORS_ORIGINS: List[AnyHttpUrl] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
+                                                description="Allowed CORS origins")
+    ALLOWED_ORIGINS: List[AnyHttpUrl] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
+                                                description="Allowed Origins for CSRF")
     CSRF_EXEMPT_ROUTES: List[str] = Field(default=["/user/login", "/user/register", "/docs", "/redoc", "/openapi.json"],
-                                          description="Routes exempt from CSRF protection")
+                                                description="Routes exempt from CSRF protection")
 
     # API Documentation
     SCHEMA_VISIBILITY: bool = Field(default=True, description="Show API docs (Swagger UI and Redoc)")
 
-    model_config = ConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore",  # Ignore unknown variables
-    )
+    def model_post_init(self, __context) -> None:
+        """Override values with environment variables if they weren't set correctly."""
+        # Force load TEST_MODE from environment after model initialization
+        env_test_mode = os.getenv("TEST_MODE", "False")
+        if env_test_mode.lower() in ("true", "1", "yes", "y", "on"):
+            print(f"DEBUG: Overriding TEST_MODE to True (was: {self.TEST_MODE})")
+            self.TEST_MODE = True
+        else:
+            # Respeitar explicitamente o valor False do .env
+            print(f"DEBUG: TEST_MODE from env is False, keeping as: {self.TEST_MODE}")
+
+        # Rebuild DATABASE_URL if needed
+        if not self.DATABASE_URL:
+            # Define se usará o banco de teste SOMENTE se TEST_MODE=True
+            # Removendo a lógica automática de usar test para development
+            is_test_env = self.TEST_MODE
+
+            # Debug output
+            # print(f"DEBUG: TEST_MODE = {self.TEST_MODE}")
+            # print(f"DEBUG: ENVIRONMENT = {self.ENVIRONMENT}")
+            # print(f"DEBUG: is_test_env = {is_test_env}")
+            # print(f"DEBUG: TEST_POSTGRES_DB = {self.TEST_POSTGRES_DB}")
+            # print(f"DEBUG: POSTGRES_DB = {self.POSTGRES_DB}")
+
+            if is_test_env and self.TEST_POSTGRES_DB:
+                db_name = self.TEST_POSTGRES_DB
+                print(f"DEBUG: Using TEST database: {db_name}")
+            else:
+                db_name = self.POSTGRES_DB
+                print(f"DEBUG: Using PRODUCTION database: {db_name}")
+
+            self.DATABASE_URL = PostgresDsn.build(
+                scheme=f"postgresql+{self.DB_DRIVER}",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                path=f"{db_name}",
+            )
+            print(f"DEBUG: Final DATABASE_URL = {self.DATABASE_URL}")
+
+    @field_validator("TEST_MODE", "DEBUG", "SCHEMA_VISIBILITY", mode="before")
+    def parse_boolean(cls, v: Union[str, bool]) -> bool:
+        """Convert string boolean values to proper boolean."""
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.lower() in ("true", "1", "yes", "y", "on")
+        return bool(v)
 
     @field_validator("DATABASE_URL", mode="before")
     def assemble_db_url(cls, value, info):
@@ -69,22 +126,8 @@ class Settings(BaseSettings):
         if value:
             return value
 
-        data = info.data
-        db_name = data.get("TEST_POSTGRES_DB") if data.get("TEST_MODE") else data.get("POSTGRES_DB")
-
-        if not all([data.get("POSTGRES_USER"), data.get("POSTGRES_PASSWORD"),
-                    data.get("POSTGRES_HOST"), data.get("POSTGRES_PORT"), db_name]):
-            raise ValueError("Missing database environment variables to build DATABASE_URL")
-
-        return PostgresDsn.build(
-            scheme=f"postgresql+{data.get('DB_DRIVER', 'asyncpg')}",
-            username=data["POSTGRES_USER"],
-            password=data["POSTGRES_PASSWORD"],
-            host=data["POSTGRES_HOST"],
-            port=data["POSTGRES_PORT"],
-            # path=f"/{db_name}",
-            path=f"{db_name}",
-        )
+        # Return None to let model_post_init handle it
+        return None
 
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
@@ -115,5 +158,4 @@ settings = Settings()
 if __name__ == "__main__":
     import json
 
-    print("✅ Loaded Settings:")
     print(json.dumps(settings.model_dump(), indent=4))

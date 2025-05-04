@@ -1,8 +1,11 @@
-# app/test/routes/test_token_revocation.py
+# app/test/routes/user_group/test_token_revocation.py
+
+# Para Rodar o Script:
+# pytest app/test/routes/user_group/test_token_revocation.py -v
 
 import pytest
 from sqlalchemy import select
-from app.adapters.outbound.persistence.models.user_model import User
+from app.adapters.outbound.persistence.models.user_group.user_model import User
 
 
 @pytest.mark.asyncio

@@ -9,7 +9,7 @@ de controle de acesso baseado em permissões e grupos.
 
 from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from app.adapters.outbound.persistence.models.base_model import Base
+from app.adapters.outbound.persistence.models.user_group.base_model import Base
 
 
 class AuthPermission(Base):

@@ -9,38 +9,44 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.adapters.configuration.config import settings
-from app.adapters.outbound.persistence.models.auth_group import AuthGroup
-from app.adapters.outbound.persistence.models.auth_permission import AuthPermission
-from app.adapters.outbound.persistence.models.auth_content_type import AuthContentType
+from app.adapters.outbound.persistence.models.user_group.auth_group import AuthGroup
+from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
+from app.adapters.outbound.persistence.models.user_group.auth_content_type import AuthContentType
 
 logger = logging.getLogger(__name__)
 
-# Grupos
-groups = ["admin", "user"]
+# Grupos existentes
+groups = ["admin", "user", "owner", "visitor"]
 
-# Permissões
+# Permissões que o sistema reconhece
 content_types = [
     {"app_label": "user", "model": "register_user"},
     {"app_label": "user", "model": "login_user"},
+    {"app_label": "user", "model": "list_users"},
 ]
 
-# Distribuição de permissões por grupo
+# Distribuição de permissões por grupo (corrigido)
 group_permissions = {
     "admin": [
-        # Permissões existentes
-        "register_user", "login_user",
+        "register_user",
+        "login_user",
+        "list_users",
+    ],
+    "owner": [
+        "register_user",
+        "login_user",
+        "list_users",
     ],
     "user": [
-        # Permissões existentes
-        "register_user", "login_user",
+        "login_user",
+    ],
+    "visitor": [
+        "login_user",
     ]
 }
 
-# Constrói a URL síncrona a partir do settings
-# (substituindo +asyncpg por +psycopg2 para usar create_engine)
+# Constrói a URL síncrona para o SQLAlchemy
 SYNC_DB_URL = str(settings.DATABASE_URL).replace("asyncpg", "psycopg2")
-
-# Cria engine e session factory
 engine = create_engine(SYNC_DB_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
@@ -48,7 +54,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 def run_permissions_seed():
     session = SessionLocal()
     try:
-        # Criação de grupos
+        # Criar ou recuperar grupos
         group_objs = {}
         for name in groups:
             group = session.query(AuthGroup).filter_by(name=name).first()
@@ -60,7 +66,7 @@ def run_permissions_seed():
                 logger.info(f"🟡 Grupo '{name}' já existe.")
             group_objs[name] = group
 
-        # Criação de content types e permissões
+        # Criar ou recuperar content types e permissões
         permission_objs = {}
         for ct in content_types:
             ct_obj = session.query(AuthContentType) \
@@ -91,7 +97,7 @@ def run_permissions_seed():
 
             permission_objs[ct["model"]] = perm
 
-        # Associação permissões ↔ grupos
+        # Atribuir permissões aos grupos
         for group_name, perms in group_permissions.items():
             group = group_objs[group_name]
             for codename in perms:
@@ -104,10 +110,12 @@ def run_permissions_seed():
 
         session.commit()
         logger.info("✅ Seed de permissões finalizado com sucesso.")
+
     except Exception as e:
         session.rollback()
         logger.error(f"🔴 Erro ao executar seed: {e}")
         raise
+
     finally:
         session.close()
 

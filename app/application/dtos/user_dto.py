@@ -52,6 +52,23 @@ class UserBase(CustomBaseModel):
         return v
 
 
+class UserLogin(CustomBaseModel):
+    """
+    Schema para login de usuário.
+
+    Utilizado para autenticação de usuários via email e senha.
+    """
+
+    email: EmailStr = Field(
+        ...,
+        description="Email do usuário. Deve ser um email válido e registrado no sistema.",
+    )
+    password: str = Field(
+        ...,
+        description="Senha do usuário utilizada para autenticação."
+    )
+
+
 class UserCreate(UserBase):
     """
     Schema para criação de um novo usuário.
@@ -156,7 +173,6 @@ class UserListOutput(CustomBaseModel):
 
 ########################################################################
 # Para manter compatibilidade com código que usava `User`
-# você pode fazer isso no final do arquivo:
 ########################################################################
 User = UserCreate
 

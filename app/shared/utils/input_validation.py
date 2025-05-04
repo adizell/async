@@ -69,28 +69,28 @@ class InputValidator:
         Returns:
             (bool indicando se é válida, lista de mensagens de erro se inválida)
         """
-        errors = []
+        errors: List[str] = []
 
         if not password:
-            errors.append(get_message("password_required", language))
+            # ou crie uma mensagem "password_empty" em MESSAGES, ou use "password_empty" que já existe
+            errors.append(get_message("password_empty", language))
         else:
             if len(password) < cls.MIN_PASSWORD_LENGTH:
-                errors.append(get_message("password_too_short", language, min=cls.MIN_PASSWORD_LENGTH))
-
+                errors.append(
+                    get_message("password_too_short", language, min=cls.MIN_PASSWORD_LENGTH)
+                )
             if len(password) > cls.MAX_PASSWORD_LENGTH:
-                errors.append(get_message("password_too_long", language, max=cls.MAX_PASSWORD_LENGTH))
-
+                errors.append(
+                    get_message("password_too_long", language, max=cls.MAX_PASSWORD_LENGTH)
+                )
             if not any(c.isupper() for c in password):
-                errors.append(get_message("password_no_upper", language))
-
+                errors.append(get_message("password_missing_uppercase", language))
             if not any(c.islower() for c in password):
-                errors.append(get_message("password_no_lower", language))
-
+                errors.append(get_message("password_missing_lowercase", language))
             if not any(c.isdigit() for c in password):
-                errors.append(get_message("password_no_number", language))
-
+                errors.append(get_message("password_missing_number", language))
             if not any(c in cls.SPECIAL_CHARACTERS for c in password):
-                errors.append(get_message("password_no_special", language))
+                errors.append(get_message("password_missing_special", language))
 
         if errors:
             return False, errors

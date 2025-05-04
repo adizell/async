@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.adapters.outbound.persistence.models.token_blacklist_model import TokenBlacklist
+from app.adapters.outbound.persistence.models.user_group.token_blacklist_model import TokenBlacklist
 from app.domain.exceptions import DatabaseOperationException
 
 
