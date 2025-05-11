@@ -10,7 +10,7 @@ manipulação de perfil e autenticação.
 
 from uuid import UUID
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.application.dtos.base_dto import CustomBaseModel
 from app.shared.utils.input_validation import InputValidator
 from pydantic import (
@@ -166,6 +166,36 @@ class UserListOutput(CustomBaseModel):
     is_superuser: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PermissionOutput(CustomBaseModel):
+    """Schema para output de permissão."""
+    id: int = Field(..., description="ID da permissão")
+    name: str = Field(..., description="Nome legível da permissão")
+    codename: str = Field(..., description="Código da permissão")
+    content_type_id: int = Field(..., description="ID do tipo de conteúdo")
+
+    class Config:
+        from_attributes = True
+
+
+class GroupOutput(CustomBaseModel):
+    """Schema para output de grupo."""
+    id: int = Field(..., description="ID do grupo")
+    name: str = Field(..., description="Nome do grupo")
+    permissions: List[PermissionOutput] = Field(default_factory=list, description="Permissões do grupo")
+
+    class Config:
+        from_attributes = True
+
+
+class UserWithPermissionsOutput(UserOutput):
+    """Schema para usuário com grupos e permissões."""
+    groups: List[GroupOutput] = Field(default_factory=list, description="Grupos do usuário")
+    permissions: List[PermissionOutput] = Field(default_factory=list, description="Permissões diretas do usuário")
 
     class Config:
         from_attributes = True

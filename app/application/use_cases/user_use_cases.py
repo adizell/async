@@ -232,3 +232,40 @@ class AsyncUserService:
         await self.db.commit()
         logger.info("User permanently deleted: %s", user.email)
         return {"message": f"User '{user.email}' permanently deleted."}
+
+    # ────────────────────────────────
+    # Permissions
+    # ────────────────────────────────
+    async def get_user_with_permissions(self, user_id: UUID) -> User:
+        """
+        Busca usuário por ID carregando todos os relacionamentos.
+        """
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.groups).selectinload(AuthGroup.permissions),
+                selectinload(User.permissions)
+            )
+            .where(User.id == user_id)
+        )
+        user = (await self.db.execute(stmt)).scalars().one_or_none()
+        if not user:
+            raise ResourceNotFoundException(message="Usuário não encontrado", resource_id=user_id)
+        return user
+
+    async def get_user_by_email_with_permissions(self, email: str) -> User:
+        """
+        Busca usuário por email carregando todos os relacionamentos.
+        """
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.groups).selectinload(AuthGroup.permissions),
+                selectinload(User.permissions)
+            )
+            .where(User.email == email)
+        )
+        user = (await self.db.execute(stmt)).scalars().one_or_none()
+        if not user:
+            raise ResourceNotFoundException(message="Usuário não encontrado com este email")
+        return user

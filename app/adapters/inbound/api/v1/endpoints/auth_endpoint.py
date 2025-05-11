@@ -1,17 +1,17 @@
 # app/adapters/inbound/api/v1/endpoints/auth_endpoint.py
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 
-from app.adapters.configuration.config import settings
 from app.adapters.inbound.api.deps import get_session, get_permissions_current_client
 from app.adapters.outbound.persistence.repositories import token_repository
 from app.application.use_cases.auth_use_cases import AsyncAuthService
+from app.adapters.outbound.security.jwt_config import JWT_SECRET, JWT_ALGORITHM
 from app.application.dtos.user_dto import (
     RefreshTokenRequest,
     UserCreate,
@@ -137,7 +137,7 @@ async def logout_user(
 ):
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         jti = payload.get("jti")
         if not jti:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token does not contain JTI.")

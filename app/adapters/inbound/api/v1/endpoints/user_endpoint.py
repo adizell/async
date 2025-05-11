@@ -2,11 +2,13 @@
 
 from uuid import UUID
 from fastapi_pagination import Params, Page
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 
 from app.application.use_cases.user_use_cases import AsyncUserService
 from app.adapters.outbound.persistence.models.user_group.user_model import User
+from app.domain import ResourceNotFoundException
 from app.shared.utils.pagination import pagination_params
 from app.adapters.outbound.security.permissions import require_permission_or_superuser
 from app.adapters.inbound.api.deps import (
@@ -22,6 +24,9 @@ from app.application.dtos.user_dto import (
 )
 
 router = APIRouter(prefix="/user", tags=["User"])
+
+# Configurar logging
+logger = logging.getLogger(__name__)
 
 
 @router.get("/me", response_model=UserOutput)
@@ -51,6 +56,93 @@ async def list_users(
 ):
     service = AsyncUserService(db)
     return await service.list_users(current_user=current_user, params=params, order=order)
+
+
+@router.get("/search/{identifier}", response_model=UserOutput)
+async def search_user(
+        identifier: str,
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(require_permission_or_superuser("list_users")),
+):
+    """
+    Busca um usuário específico por email ou ID.
+
+    Args:
+        identifier: Email do usuário ou ID (UUID)
+        db: Sessão do banco de dados
+        current_user: Usuário autenticado (precisa ter permissão list_users)
+
+    Returns:
+        Usuário encontrado com suas informações
+
+    Raises:
+        404: Se o usuário não for encontrado
+        400: Se o identifier for inválido
+    """
+    service = AsyncUserService(db)
+
+    try:
+        # Tenta converter para UUID para verificar se é um ID
+        import uuid
+        try:
+            user_id = uuid.UUID(identifier)
+            user = await service._get_user_by_id(user_id)
+        except ValueError:
+            # Se não for UUID, trata como email
+            user = await service._get_user_by_email(identifier)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Erro ao buscar usuário: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao buscar usuário")
+
+    return user
+
+
+# Alternativa: dois endpoints separados para maior clareza
+
+@router.get("/search/email/{email}", response_model=UserOutput)
+async def search_user_by_email(
+        email: str,
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(require_permission_or_superuser("list_users")),
+):
+    """
+    Busca um usuário específico por email.
+    """
+    service = AsyncUserService(db)
+
+    try:
+        user = await service._get_user_by_email(email)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Erro ao buscar usuário por email: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao buscar usuário")
+
+    return user
+
+
+@router.get("/search/id/{user_id}", response_model=UserOutput)
+async def search_user_by_id(
+        user_id: UUID,
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(require_permission_or_superuser("list_users")),
+):
+    """
+    Busca um usuário específico por ID.
+    """
+    service = AsyncUserService(db)
+
+    try:
+        user = await service._get_user_by_id(user_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Erro ao buscar usuário por ID: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno ao buscar usuário")
+
+    return user
 
 
 @router.put("/update/{user_id}", response_model=UserOutput)
