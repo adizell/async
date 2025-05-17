@@ -14,8 +14,9 @@ load_dotenv(env_path, verbose=True)
 
 from pydantic import SecretStr, AnyHttpUrl, PostgresDsn, Field, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
-from logging import getLevelName
 from typing import Optional, List, Union
+from logging import getLevelName
+from enum import Enum
 
 
 class Settings(BaseSettings):
@@ -38,6 +39,24 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = Field(default="INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
 
+    # Novas configurações para JWT Cookies
+    COOKIE_DOMAIN: Optional[str] = Field(default=None, description="Domain for cookies (e.g. example.com)")
+    COOKIE_PATH: str = Field(default="/", description="Path for cookies")
+    COOKIE_SAMESITE: str = Field(default="lax", description="SameSite policy for cookies: lax, strict, or none")
+    COOKIE_MAX_AGE: int = Field(default=60 * 60 * 24 * 30, description="Cookie max age in seconds")
+
+    # Configurações para proteção CSRF
+    CSRF_PROTECT: bool = Field(default=True, description="Enable CSRF protection")
+    CSRF_HEADER_NAME: str = Field(default="X-CSRF-Token", description="CSRF header name")
+
+    # Configuração para modo de autenticação
+    class AuthMode(str, Enum):
+        bearer = "bearer"
+        cookie = "cookie"
+        hybrid = "hybrid"
+
+    AUTH_MODE: AuthMode = Field(default="bearer", description="Authentication mode: bearer, cookie, or hybrid")
+
     # Database
     DB_DRIVER: str = Field(default="asyncpg", description="Database driver (asyncpg)")
     POSTGRES_USER: str
@@ -59,11 +78,11 @@ class Settings(BaseSettings):
     # Security (CORS and CSRF)
     BASE_URL: str = Field(default="http://localhost:8000", description="Base URL of the application")
     CORS_ORIGINS: List[AnyHttpUrl] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
-                                                description="Allowed CORS origins")
+                                           description="Allowed CORS origins")
     ALLOWED_ORIGINS: List[AnyHttpUrl] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"],
-                                                description="Allowed Origins for CSRF")
+                                              description="Allowed Origins for CSRF")
     CSRF_EXEMPT_ROUTES: List[str] = Field(default=["/user/login", "/user/register", "/docs", "/redoc", "/openapi.json"],
-                                                description="Routes exempt from CSRF protection")
+                                          description="Routes exempt from CSRF protection")
 
     # API Documentation
     SCHEMA_VISIBILITY: bool = Field(default=True, description="Show API docs (Swagger UI and Redoc)")
@@ -149,6 +168,37 @@ class Settings(BaseSettings):
         if getLevelName(lvl) == "Level %s" % lvl:
             raise ValueError(f"Invalid LOG_LEVEL: {v}")
         return lvl
+
+    # Validação para AUTH_MODE
+    @field_validator("AUTH_MODE", mode="before")
+    def validate_auth_mode(cls, v: str) -> str:
+        """Valida o modo de autenticação."""
+        if v.lower() not in ["bearer", "cookie", "hybrid"]:
+            raise ValueError(f"AUTH_MODE deve ser 'bearer', 'cookie' ou 'hybrid', recebido: {v}")
+        return v.lower()
+
+    # Validação para COOKIE_SAMESITE
+    @field_validator("COOKIE_SAMESITE", mode="before")
+    def validate_cookie_samesite(cls, v: str) -> str:
+        """Valida a política SameSite do cookie."""
+        if v.lower() not in ["lax", "strict", "none"]:
+            raise ValueError(f"COOKIE_SAMESITE deve ser 'lax', 'strict' ou 'none', recebido: {v}")
+        return v.lower()
+
+    # Validação para COOKIE_MAX_AGE
+    @field_validator("COOKIE_MAX_AGE", mode="before")
+    def validate_cookie_max_age(cls, v: Union[str, int]) -> int:
+        """Converte e valida o tempo máximo de vida do cookie."""
+        if isinstance(v, str):
+            try:
+                v = int(v)
+            except ValueError:
+                raise ValueError(f"COOKIE_MAX_AGE deve ser um número inteiro, recebido: {v}")
+
+        # Certifique-se de que o valor é positivo
+        if v <= 0:
+            raise ValueError(f"COOKIE_MAX_AGE deve ser positivo, recebido: {v}")
+        return v
 
 
 # Create settings instance

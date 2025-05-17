@@ -25,7 +25,7 @@ content_types = [
     {"app_label": "user", "model": "list_users"},
 ]
 
-# Distribuição de permissões por grupo (corrigido)
+# Distribuição de permissões por grupo
 group_permissions = {
     "admin": [
         "register_user",

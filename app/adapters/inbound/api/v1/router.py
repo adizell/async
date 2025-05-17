@@ -2,9 +2,17 @@
 
 from fastapi import APIRouter
 # Manter em ordem alfabética
-from app.adapters.inbound.api.v1.endpoints import auth_endpoint, client_endpoint, user_endpoint
+from app.adapters.inbound.api.v1.endpoints import (
+    auth_endpoint,
+    client_endpoint,
+    user_endpoint,
+    auth_cookie_endpoint  # Importar módulo de cookie
+)
 
 api_router = APIRouter()
+
+# Incluir router de autenticação baseada em cookies
+api_router.include_router(auth_cookie_endpoint.router)
 
 # Incluir os routers dos endpoints
 api_router.include_router(auth_endpoint.router)

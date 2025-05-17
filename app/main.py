@@ -10,9 +10,10 @@ from fastapi.openapi.utils import get_openapi
 from contextlib import asynccontextmanager
 
 from app.adapters.configuration.config import settings
+from app.adapters.inbound.api.v1.endpoints import client_endpoint
 from app.adapters.outbound.persistence.database import engine, Base
 from app.adapters.inbound.api.v1.router import api_router as api_v1_router
-from app.adapters.inbound.api.v1.endpoints import client_endpoint
+from app.shared.middleware.hybrid_auth_middleware import HybridAuthMiddleware
 from app.shared.middleware.error_handler_middleware import ErrorHandlerMiddleware
 from app.adapters.outbound.persistence.models.user_group.base_model import register_password_protection
 
@@ -69,6 +70,7 @@ from app.shared.middleware import (
     AsyncSecurityHeadersMiddleware
 )
 
+app.add_middleware(HybridAuthMiddleware)
 app.add_middleware(AsyncSecurityHeadersMiddleware)
 app.add_middleware(AsyncCSRFProtectionMiddleware)
 app.add_middleware(AsyncRequestLoggingMiddleware)
