@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 
+from app.adapters.configuration.config import settings
 from app.adapters.inbound.api.deps import get_session, get_permissions_current_client
 from app.adapters.inbound.api.deps_cookies import jwt_cookie_manager, get_current_user_from_cookie
 from app.adapters.outbound.persistence.repositories import token_repository
@@ -50,6 +51,7 @@ router = APIRouter(
 
 @router.post(
     "/auth-cookie/register",
+    include_in_schema=settings.SCHEMA_VISIBILITY,
     response_model=UserOutput,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
@@ -80,6 +82,7 @@ async def register_user(
 
 @router.post(
     "/auth-cookie/login",
+    include_in_schema=settings.SCHEMA_VISIBILITY,
     status_code=status.HTTP_200_OK,
     summary="Login user with cookies",
     description="Authenticates user credentials and sets JWT tokens in secure cookies."
@@ -144,6 +147,7 @@ async def login_with_cookies(
 
 @router.post(
     "/auth-cookie/refresh",
+    include_in_schema=settings.SCHEMA_VISIBILITY,
     status_code=status.HTTP_200_OK,
     summary="Refresh authentication cookies",
     description="Generates new access and refresh tokens from a valid refresh token cookie."
@@ -208,6 +212,7 @@ async def refresh_token_cookie(
 
 @router.post(
     "/auth-cookie/logout",
+    include_in_schema=settings.SCHEMA_VISIBILITY,
     status_code=status.HTTP_200_OK,
     summary="Logout user (cookie-based)",
     description="Revokes the current token and removes authentication cookies."
@@ -274,6 +279,7 @@ async def logout_with_cookies(
 
 @router.get(
     "/auth-cookie/me",
+    include_in_schema=settings.SCHEMA_VISIBILITY,
     response_model=UserOutput,
     summary="Get current user profile",
     description="Returns the authenticated user data using cookie authentication."

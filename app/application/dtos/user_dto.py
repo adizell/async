@@ -1,11 +1,11 @@
 # app/application/dtos/user_dto.py
 
 """
-Schemas para dados de usuário.
+Schemas for user data.
 
-Este módulo define os dtos Pydantic para validação e serialização
-dos dados relacionados a usuários, incluindo registro, login,
-manipulação de perfil e autenticação.
+This module defines DTOs (Data Transfer Objects) for validating and
+serializing data related to users, including registration, login,
+profile management and authentication.
 """
 
 from uuid import UUID
@@ -20,31 +20,34 @@ from pydantic import (
     Field,
 )
 
+# Import GroupOutput and PermissionOutput from group_dto.py instead of redefining
+from app.application.dtos.group_dto import GroupOutput, PermissionOutput
+
 
 class UserBase(CustomBaseModel):
     """
-    Schema base para dados de usuário.
+    Schema base for user data.
 
-    Contém os atributos comuns a todos os dtos de usuário.
+    Contains the attributes common to all user DTOs.
     """
     email: EmailStr = Field(
         ...,
-        description="Email do usuário. Deve ser um email válido e único.",
+        description="Email of the user. Must be a valid and unique email.",
     )
 
     @field_validator('email')
     def validate_email_security(cls, v):
         """
-        Valida a segurança do email para evitar injeções.
+        Validates the security of the email to prevent injections.
 
         Args:
-            v: Email a ser validado
+            v: Email to validate
 
         Returns:
-            Email validado
+            Validated email
 
         Raises:
-            ValueError: Se o email for inválido
+            ValueError: If the email is invalid
         """
         is_valid, error_msg = InputValidator.validate_email(v)
         if not is_valid:
@@ -54,44 +57,44 @@ class UserBase(CustomBaseModel):
 
 class UserLogin(CustomBaseModel):
     """
-    Schema para login de usuário.
+    Schema for user login.
 
-    Utilizado para autenticação de usuários via email e senha.
+    Used for user authentication via email and password.
     """
 
     email: EmailStr = Field(
         ...,
-        description="Email do usuário. Deve ser um email válido e registrado no sistema.",
+        description="Email of the user. Must be a valid and registered email.",
     )
     password: str = Field(
         ...,
-        description="Senha do usuário utilizada para autenticação."
+        description="User's password used for authentication."
     )
 
 
 class UserCreate(UserBase):
     """
-    Schema para criação de um novo usuário.
+    Schema for creating a new user.
 
-    Estende UserBase e adiciona a senha.
+    Extends UserBase and adds the password.
     """
     password: constr(min_length=6) = Field(
-        ..., description="Senha do usuário, com no mínimo 6 caracteres."
+        ..., description="User's password, with a minimum of 6 characters."
     )
 
     @field_validator('password')
     def validate_password_security(cls, v):
         """
-        Valida a senha para garantir requisitos mínimos de segurança.
+        Validates the password to ensure minimum security requirements.
 
         Args:
-            v: Senha a ser validada
+            v: Password to validate
 
         Returns:
-            Senha validada
+            Validated password
 
         Raises:
-            ValueError: Se a senha não atender aos requisitos
+            ValueError: If the password doesn't meet requirements
         """
         is_valid, error_msg = InputValidator.validate_password(v)
         if not is_valid:
@@ -101,15 +104,27 @@ class UserCreate(UserBase):
 
 class UserOutput(UserBase):
     """
-    Schema para retorno de dados de usuário.
+    Schema for returning user data.
 
-    Utilizado para retornar dados do usuário nas APIs sem expor dados sensíveis.
+    Used to return user data in APIs without exposing sensitive data.
     """
-    id: UUID = Field(..., description="Identificador único do usuário.")
-    is_active: bool = Field(..., description="Indica se o usuário está ativo.")
-    created_at: datetime = Field(..., description="Data e hora de criação do usuário.")
-    is_superuser: bool = Field(..., description="Indica se o usuário é um superusuário.")
-    updated_at: Optional[datetime] = Field(None, description="Data e hora da última atualização.")
+    id: UUID = Field(..., description="User's unique identifier.")
+    is_active: bool = Field(..., description="Indicates if the user is active.")
+    created_at: datetime = Field(..., description="User creation date and time.")
+    is_superuser: bool = Field(..., description="Indicates if the user is a superuser.")
+    updated_at: Optional[datetime] = Field(None, description="Date and time of the last update.")
+
+    class Config:
+        from_attributes = True
+
+
+class UserGroupsOutput(CustomBaseModel):
+    """Schema for user with groups output."""
+    id: UUID = Field(..., description="ID of the user")
+    email: str = Field(..., description="Email of the user")
+    is_active: bool = Field(..., description="Indicates if the user is active")
+    is_superuser: bool = Field(..., description="Indicates if the user is a superuser")
+    groups: List[GroupOutput] = Field(default_factory=list, description="Groups assigned to the user")
 
     class Config:
         from_attributes = True
@@ -117,48 +132,48 @@ class UserOutput(UserBase):
 
 class UserSelfUpdate(CustomBaseModel):
     """
-    Schema para usuários atualizarem seus próprios dados.
+    Schema for users to update their own data.
 
-    Permite apenas atualização de email e password.
+    Only allows updating email and password.
     """
     email: Optional[EmailStr] = Field(
         None,
-        description="Email do usuário. Deve ser um email válido e único.",
+        description="Email of the user. Must be a valid and unique email.",
     )
     password: Optional[constr(min_length=6)] = Field(
-        None, description="Nova senha do usuário, com no mínimo 6 caracteres."
+        None, description="New password for the user, with a minimum of 6 characters."
     )
     current_password: Optional[str] = Field(
-        None, description="Senha atual (necessária para confirmar alterações)."
+        None, description="Current password (required to confirm changes)."
     )
 
 
 class UserUpdate(CustomBaseModel):
     """
-    Schema para administradores atualizarem qualquer usuário.
+    Schema for administrators to update any user.
 
-    Permite atualização de email, password, status ativo e status de superusuário.
+    Allows updating email, password, active status and superuser status.
     """
     email: Optional[EmailStr] = Field(
         None,
-        description="Email do usuário. Deve ser um email válido e único.",
+        description="Email of the user. Must be a valid and unique email.",
     )
     password: Optional[constr(min_length=6)] = Field(
-        None, description="Nova senha do usuário, com no mínimo 6 caracteres."
+        None, description="New password for the user, with a minimum of 6 characters."
     )
     is_active: Optional[bool] = Field(
-        None, description="Define se o usuário está ativo ou inativo."
+        None, description="Defines if the user is active or inactive."
     )
     is_superuser: Optional[bool] = Field(
-        None, description="Define se o usuário é um superusuário."
+        None, description="Defines if the user is a superuser."
     )
 
 
 class UserListOutput(CustomBaseModel):
     """
-    Schema para listar usuários.
+    Schema for listing users.
 
-    Utilizado nas APIs de listagem de usuários.
+    Used in user listing APIs.
     """
     id: UUID
     email: str
@@ -171,54 +186,46 @@ class UserListOutput(CustomBaseModel):
         from_attributes = True
 
 
-class PermissionOutput(CustomBaseModel):
-    """Schema para output de permissão."""
-    id: int = Field(..., description="ID da permissão")
-    name: str = Field(..., description="Nome legível da permissão")
-    codename: str = Field(..., description="Código da permissão")
-    content_type_id: int = Field(..., description="ID do tipo de conteúdo")
-
-    class Config:
-        from_attributes = True
-
-
-class GroupOutput(CustomBaseModel):
-    """Schema para output de grupo."""
-    id: int = Field(..., description="ID do grupo")
-    name: str = Field(..., description="Nome do grupo")
-    permissions: List[PermissionOutput] = Field(default_factory=list, description="Permissões do grupo")
-
-    class Config:
-        from_attributes = True
-
-
 class UserWithPermissionsOutput(UserOutput):
-    """Schema para usuário com grupos e permissões."""
-    groups: List[GroupOutput] = Field(default_factory=list, description="Grupos do usuário")
-    permissions: List[PermissionOutput] = Field(default_factory=list, description="Permissões diretas do usuário")
+    """Schema for user with groups and permissions."""
+    groups: List[GroupOutput] = Field(default_factory=list, description="User's groups")
+    permissions: List[PermissionOutput] = Field(default_factory=list, description="User's direct permissions")
+
+    class Config:
+        from_attributes = True
+
+
+class UserPermissionOutput(CustomBaseModel):
+    """Schema for detailed user permissions output."""
+    user_id: str = Field(..., description="ID of the user")
+    email: str = Field(..., description="Email of the user")
+    groups: List[GroupOutput] = Field(default_factory=list, description="Groups assigned to the user")
+    direct_permissions: List[PermissionOutput] = Field(default_factory=list,
+                                                       description="Permissions directly assigned to the user")
+    effective_permissions: List[str] = Field(default_factory=list, description="All effective permission codenames")
 
     class Config:
         from_attributes = True
 
 
 ########################################################################
-# Para manter compatibilidade com código que usava `User`
+# For backward compatibility with code that used `User`
 ########################################################################
 User = UserCreate
 
 
 ########################################################################
-# Classe para Token de autenticação
+# Authentication token classes
 ########################################################################
 class TokenData(CustomBaseModel):
     """
-    Schema para dados de token de autenticação.
+    Schema for authentication token data.
 
-    Utilizado para retornar o token JWT e informações de expiração.
+    Used to return JWT token and expiration information.
     """
-    access_token: str = Field(..., description="Token JWT de acesso.")
-    refresh_token: str = Field(..., description="Token de atualização para obter novos tokens de acesso.")
-    expires_at: datetime = Field(..., description="Data e hora de expiração do token.")
+    access_token: str = Field(..., description="JWT access token.")
+    refresh_token: str = Field(..., description="Refresh token for obtaining new access tokens.")
+    expires_at: datetime = Field(..., description="Token expiration date and time.")
 
     class Config:
         from_attributes = True
@@ -226,6 +233,6 @@ class TokenData(CustomBaseModel):
 
 class RefreshTokenRequest(CustomBaseModel):
     """
-    Schema para solicitação de refresh token.
+    Schema for refresh token request.
     """
-    refresh_token: str = Field(..., description="Token de atualização para obter um novo token de acesso.")
+    refresh_token: str = Field(..., description="Refresh token for obtaining a new access token.")

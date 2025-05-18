@@ -20,25 +20,69 @@ groups = ["admin", "user", "owner", "visitor"]
 
 # Permissões que o sistema reconhece
 content_types = [
+    # User management
     {"app_label": "user", "model": "register_user"},
     {"app_label": "user", "model": "login_user"},
     {"app_label": "user", "model": "list_users"},
+
+    # Group management
+    {"app_label": "group", "model": "manage_groups"},
+    {"app_label": "group", "model": "view_groups"},
+
+    # Permission management
+    {"app_label": "permission", "model": "view_permissions"},
+
+    # User-Group association
+    {"app_label": "user_group", "model": "manage_user_groups"},
+    {"app_label": "user_group", "model": "view_user_groups"},
+    {"app_label": "user_group", "model": "manage_user_permissions"},
+    {"app_label": "user_group", "model": "view_user_permissions"},
 ]
 
 # Distribuição de permissões por grupo
 group_permissions = {
     "admin": [
+        # User permissions
         "register_user",
         "login_user",
         "list_users",
+
+        # Group management
+        "manage_groups",
+        "view_groups",
+
+        # Permission management
+        "view_permissions",
+
+        # User-Group association
+        "manage_user_groups",
+        "view_user_groups",
+        "manage_user_permissions",
+        "view_user_permissions",
     ],
     "owner": [
+        # User permissions
         "register_user",
         "login_user",
         "list_users",
+
+        # Group management
+        "manage_groups",
+        "view_groups",
+
+        # Permission management
+        "view_permissions",
+
+        # User-Group association
+        "manage_user_groups",
+        "view_user_groups",
+        "manage_user_permissions",
+        "view_user_permissions",
     ],
     "user": [
         "login_user",
+        "view_groups",
+        "view_user_groups",
     ],
     "visitor": [
         "login_user",

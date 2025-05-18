@@ -1,8 +1,0 @@
-# Conferir a variável DATABASE_URL montada:
-python -c "from app.adapters.configuration.config import settings; print(settings.DATABASE_URL)"
-
-# Em produção futuramente, sem reload:
-# --workers 4: vai abrir 4 processos para aguentar mais requisições.
-# Sem --reload (reload é só pra desenvolvimento).
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-

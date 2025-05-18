@@ -6,7 +6,10 @@ from app.adapters.inbound.api.v1.endpoints import (
     auth_endpoint,
     client_endpoint,
     user_endpoint,
-    auth_cookie_endpoint  # Importar módulo de cookie
+    auth_cookie_endpoint,
+    group_endpoint,
+    auth_permission_endpoint,
+    user_access_groups_endpoint
 )
 
 api_router = APIRouter()
@@ -22,3 +25,8 @@ api_router.include_router(user_endpoint.router)
 api_router.include_router(client_endpoint.jwt_router)
 api_router.include_router(client_endpoint.create_url_router)
 api_router.include_router(client_endpoint.update_url_router)
+
+# Incluir routers AuthGroup AuthPermission AuthContentType
+api_router.include_router(user_access_groups_endpoint.router)
+api_router.include_router(group_endpoint.router)
+api_router.include_router(auth_permission_endpoint.router)

@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     CSRF_PROTECT: bool = Field(default=True, description="Enable CSRF protection")
     CSRF_HEADER_NAME: str = Field(default="X-CSRF-Token", description="CSRF header name")
 
+    # Controle de visibilidade das rotas na documentação
+    SCHEMA_VISIBILITY: bool = False  # True para mostrar todas as rotas, False para ocultar rotas sensíveis
+
     # Configuração para modo de autenticação
     class AuthMode(str, Enum):
         bearer = "bearer"
