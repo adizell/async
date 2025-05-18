@@ -3,31 +3,33 @@
 """
 API endpoints for permission management.
 
-This module provides endpoints for listing permissions and content types.
+This module provides endpoints for listing, retrieving, and managing permissions.
 """
 
 import logging
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, Query
 from fastapi_pagination import Params, Page
+from httpcore import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.inbound.api.deps import get_permissions_current_user, get_session
 from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.application.dtos.group_dto import (
     PermissionOutput,
-    ContentTypeOutput
+    ContentTypeOutput, PermissionUpdate, PermissionCreate
 )
 from app.application.use_cases.permission_use_cases import AsyncPermissionService
 from app.domain.exceptions import (
     ResourceNotFoundException,
-    PermissionDeniedException
+    PermissionDeniedException,
+    ResourceAlreadyExistsException
 )
 from app.shared.utils.pagination import pagination_params
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/auth-permission", tags=["Auth Permission"])
+router = APIRouter(prefix="/auth-permissions", tags=["Auth Permissions"])
 
 
 @router.get(
@@ -62,43 +64,7 @@ async def list_permissions(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
     except Exception as e:
-        logger.exception(f"Error listing permissions: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
-
-
-@router.get(
-    "/content-types",
-    response_model=Page[ContentTypeOutput],
-    status_code=status.HTTP_200_OK,
-    summary="List Content Types",
-    description="List all content types with pagination. Requires superuser or 'view_permissions' permission."
-)
-async def list_content_types(
-        db: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_permissions_current_user),
-        params: Params = Depends(pagination_params)
-):
-    """
-    List all content types with pagination.
-
-    Args:
-        db: Database session
-        current_user: Authenticated user
-        params: Pagination parameters
-
-    Returns:
-        Paginated list of content types
-    """
-    try:
-        service = AsyncPermissionService(db)
-        return await service.list_content_types(current_user, params)
-
-    except PermissionDeniedException as e:
-        logger.warning(f"Permission denied: {e}")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-
-    except Exception as e:
-        logger.exception(f"Error listing content types: {e}")
+        logger.exception(f"Error listing permissions: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
@@ -138,183 +104,180 @@ async def get_permission(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     except Exception as e:
-        logger.exception(f"Error getting permission: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
-
-
-@router.get(
-    "/content-types/{content_type_id}",
-    response_model=ContentTypeOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Get Content Type",
-    description="Get a specific content type by ID. Requires superuser or 'view_permissions' permission."
-)
-async def get_content_type(
-        content_type_id: int = Path(..., gt=0, description="The ID of the content type to get"),
-        db: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_permissions_current_user)
-):
-    """
-    Get a specific content type by ID.
-
-    Args:
-        content_type_id: ID of the content type
-        db: Database session
-        current_user: Authenticated user
-
-    Returns:
-        The requested content type
-    """
-    try:
-        service = AsyncPermissionService(db)
-        return await service.get_content_type(current_user, content_type_id)
-
-    except PermissionDeniedException as e:
-        logger.warning(f"Permission denied: {e}")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-
-    except ResourceNotFoundException as e:
-        logger.warning(f"Content type not found: {e}")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-    except Exception as e:
-        logger.exception(f"Error getting content type: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
-
-
-@router.get(
-    "/content-types/{content_type_id}/permissions",
-    response_model=List[PermissionOutput],
-    status_code=status.HTTP_200_OK,
-    summary="Get Content Type Permissions",
-    description="Get all permissions for a specific content type. Requires superuser or 'view_permissions' permission."
-)
-async def get_content_type_permissions(
-        content_type_id: int = Path(..., gt=0, description="The ID of the content type"),
-        db: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_permissions_current_user)
-):
-    """
-    Get all permissions for a specific content type.
-
-    Args:
-        content_type_id: ID of the content type
-        db: Database session
-        current_user: Authenticated user
-
-    Returns:
-        List of permissions for the content type
-    """
-    try:
-        service = AsyncPermissionService(db)
-        return await service.get_permissions_by_content_type(current_user, content_type_id)
-
-    except PermissionDeniedException as e:
-        logger.warning(f"Permission denied: {e}")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-
-    except ResourceNotFoundException as e:
-        logger.warning(f"Content type not found: {e}")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-    except Exception as e:
-        logger.exception(f"Error getting content type permissions: {e}")
+        logger.exception(f"Error getting permission: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.post(
-    "/{group_id}/permissions",
-    response_model=GroupOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Add Permissions to Group",
-    description="Add permissions to a group. Requires superuser or 'manage_groups' permission."
+    "",
+    response_model=PermissionOutput,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create Permission",
+    description="Create a new permission. Requires superuser or 'manage_permissions' permission."
 )
-async def add_permissions_to_group(
-        data: GroupPermissionUpdate,
-        group_id: int = Path(..., gt=0, description="The ID of the group"),
+async def create_permission(
+        data: PermissionCreate,  # Precisamos criar este DTO
         db: AsyncSession = Depends(get_session),
         current_user: User = Depends(get_permissions_current_user)
 ):
     """
-    Add permissions to a group.
+    Create a new permission.
 
     Args:
-        data: List of permission IDs to add
-        group_id: ID of the group
+        data: Permission creation data
         db: Database session
         current_user: Authenticated user
 
     Returns:
-        The updated group with permissions
-
-    Example:
-        ```
-        {
-          "permission_ids": [1, 2, 3]
-        }
-        ```
+        The created permission
     """
     try:
-        service = AsyncGroupService(db)
-        return await service.add_permissions_to_group(current_user, group_id, data)
+        service = AsyncPermissionService(db)
+        return await service.create_permission(
+            current_user,
+            data.name,
+            data.codename,
+            data.content_type_id
+        )
+
+    except PermissionDeniedException as e:
+        logger.warning(f"Permission denied: {e}")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+    except ResourceAlreadyExistsException as e:
+        logger.warning(f"Permission already exists: {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    except ResourceNotFoundException as e:
+        logger.warning(f"Content type not found: {e}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except Exception as e:
+        logger.exception(f"Error creating permission: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+
+@router.put(
+    "/{permission_id}",
+    response_model=PermissionOutput,
+    status_code=status.HTTP_200_OK,
+    summary="Update Permission",
+    description="Update a permission. Requires superuser or 'manage_permissions' permission."
+)
+async def update_permission(
+        # Corrigido: Ordem dos parâmetros
+        data: PermissionUpdate,  # Precisamos criar este DTO
+        permission_id: int = Path(..., gt=0, description="The ID of the permission to update"),
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_permissions_current_user)
+):
+    """
+    Update a permission.
+
+    Args:
+        permission_id: ID of the permission
+        data: Updated permission data
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        The updated permission
+    """
+    try:
+        service = AsyncPermissionService(db)
+        return await service.update_permission(
+            current_user,
+            permission_id,
+            data.name,
+            data.codename if "codename" in data.dict() else None,
+            data.content_type_id if "content_type_id" in data.dict() else None
+        )
 
     except PermissionDeniedException as e:
         logger.warning(f"Permission denied: {e}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
     except ResourceNotFoundException as e:
-        logger.warning(f"Group or permissions not found: {e}")
+        logger.warning(f"Permission or content type not found: {e}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
+    except ResourceAlreadyExistsException as e:
+        logger.warning(f"Permission already exists: {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
     except Exception as e:
-        logger.exception(f"Error adding permissions to group: {e}")
+        logger.exception(f"Error updating permission: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.delete(
-    "/{group_id}/permissions",
-    response_model=GroupOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Remove Permissions from Group",
-    description="Remove permissions from a group. Requires superuser or 'manage_groups' permission."
+    "/{permission_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete Permission",
+    description="Delete a permission. Requires superuser."
 )
-async def remove_permissions_from_group(
-        data: GroupPermissionUpdate,
-        group_id: int = Path(..., gt=0, description="The ID of the group"),
+async def delete_permission(
+        permission_id: int = Path(..., gt=0, description="The ID of the permission to delete"),
         db: AsyncSession = Depends(get_session),
         current_user: User = Depends(get_permissions_current_user)
 ):
     """
-    Remove permissions from a group.
+    Delete a permission.
 
     Args:
-        data: List of permission IDs to remove
-        group_id: ID of the group
+        permission_id: ID of the permission
         db: Database session
         current_user: Authenticated user
-
-    Returns:
-        The updated group with permissions
-
-    Example:
-        ```
-        {
-          "permission_ids": [1, 2, 3]
-        }
-        ```
     """
     try:
-        service = AsyncGroupService(db)
-        return await service.remove_permissions_from_group(current_user, group_id, data)
+        service = AsyncPermissionService(db)
+        await service.delete_permission(current_user, permission_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except PermissionDeniedException as e:
         logger.warning(f"Permission denied: {e}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
     except ResourceNotFoundException as e:
-        logger.warning(f"Group not found: {e}")
+        logger.warning(f"Permission not found: {e}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     except Exception as e:
-        logger.exception(f"Error removing permissions from group: {e}")
+        logger.exception(f"Error deleting permission: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+
+@router.get(
+    "/search",
+    response_model=List[PermissionOutput],
+    status_code=status.HTTP_200_OK,
+    summary="Search Permissions",
+    description="Search permissions by name or codename. Requires superuser or 'view_permissions' permission."
+)
+async def search_permissions(
+        q: str = Query(..., min_length=1, description="Search query for name or codename"),
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_permissions_current_user)
+):
+    """
+    Search permissions by name or codename.
+
+    Args:
+        q: Search query
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        List of matching permissions
+    """
+    try:
+        service = AsyncPermissionService(db)
+        return await service.search_permissions(current_user, q)
+
+    except PermissionDeniedException as e:
+        logger.warning(f"Permission denied: {e}")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+    except Exception as e:
+        logger.exception(f"Error searching permissions: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")

@@ -8,7 +8,7 @@ direct permissions, and retrieving user permissions.
 """
 
 import logging
-from typing import List
+from typing import List, Dict
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Body
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -351,4 +351,57 @@ async def set_user_superuser_status(
 
     except Exception as e:
         logger.exception(f"Error updating superuser status: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+
+@router.get(
+    "/{user_id}/check-permission/{permission_codename}",
+    response_model=Dict[str, bool],
+    status_code=status.HTTP_200_OK,
+    summary="Check User Permission",
+    description="Check if a user has a specific permission. Users can check their own permissions."
+)
+async def check_user_permission(
+        user_id: UUID = Path(..., description="The ID of the user"),
+        permission_codename: str = Path(..., description="Permission codename to check"),
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_permissions_current_user)
+):
+    """
+    Check if a user has a specific permission.
+
+    Args:
+        user_id: ID of the user
+        permission_codename: Permission codename to check
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        Dictionary with result of permission check
+    """
+    try:
+        service = AsyncUserGroupService(db)
+
+        # Verificar permissão para ver permissões de outros usuários
+        if current_user.id != user_id and not current_user.is_superuser and not current_user.has_permission(
+                "view_user_permissions"):
+            logger.warning(
+                f"User {current_user.email} attempted to check permissions of user {user_id} without permission")
+            raise PermissionDeniedException("You don't have permission to check other users' permissions")
+
+        user = await service._get_user_by_id(user_id)
+        has_permission = user.has_permission(permission_codename)
+
+        return {"has_permission": has_permission}
+
+    except PermissionDeniedException as e:
+        logger.warning(f"Permission denied: {e}")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+    except ResourceNotFoundException as e:
+        logger.warning(f"User not found: {e}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except Exception as e:
+        logger.exception(f"Error checking user permission: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")

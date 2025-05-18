@@ -1,4 +1,4 @@
-# app/adapters/inbound/api/v1/endpoints/group_endpoint.py
+# app/adapters/inbound/api/v1/endpoints/auth_group_endpoint.py
 
 """
 API endpoints for group management.
@@ -8,6 +8,8 @@ as well as managing group permissions.
 """
 
 import logging
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from fastapi_pagination import Params, Page
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +20,7 @@ from app.application.dtos.group_dto import (
     GroupCreate,
     GroupUpdate,
     GroupOutput,
-    GroupPermissionUpdate
+    GroupPermissionUpdate, PermissionOutput
 )
 from app.application.use_cases.group_use_cases import AsyncGroupService
 from app.domain.exceptions import (
@@ -30,7 +32,7 @@ from app.shared.utils.pagination import pagination_params
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/groups", tags=["Groups"])
+router = APIRouter(prefix="/auth-groups", tags=["Auth Groups"])
 
 
 @router.post(
@@ -237,4 +239,41 @@ async def delete_group(
 
     except Exception as e:
         logger.exception(f"Error deleting group: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+
+@router.get(
+    "/{group_id}/permissions",
+    response_model=List[PermissionOutput],
+    status_code=status.HTTP_200_OK,
+    summary="Get Group Permissions",
+    description="Get all permissions for a specific group."
+)
+async def get_group_permissions(
+        group_id: int = Path(..., gt=0, description="The ID of the group"),
+        db: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_permissions_current_user)
+):
+    """
+    Get all permissions for a specific group.
+
+    Args:
+        group_id: ID of the group
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        List of permissions for the group
+    """
+    try:
+        service = AsyncGroupService(db)
+        group = await service.get_group(group_id)
+        return group.permissions
+
+    except ResourceNotFoundException as e:
+        logger.warning(f"Group not found: {e}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except Exception as e:
+        logger.exception(f"Error getting group permissions: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")

@@ -78,3 +78,36 @@ class UserPermissionOutput(CustomBaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ContentTypeBase(CustomBaseModel):
+    """Base schema for content type data."""
+    app_label: str = Field(..., description="Application label", min_length=1, max_length=100)
+    model: str = Field(..., description="Model name", min_length=1, max_length=100)
+
+
+class ContentTypeCreate(ContentTypeBase):
+    """Schema for creating a new content type."""
+    pass
+
+
+class ContentTypeUpdate(ContentTypeBase):
+    """Schema for updating a content type."""
+    pass
+
+
+class PermissionBase(CustomBaseModel):
+    """Base schema for permission data."""
+    name: str = Field(..., description="Name of the permission")
+
+
+class PermissionCreate(PermissionBase):
+    """Schema for creating a new permission."""
+    codename: str = Field(..., description="Codename of the permission")
+    content_type_id: int = Field(..., description="ID of the content type")
+
+
+class PermissionUpdate(PermissionBase):
+    """Schema for updating a permission."""
+    codename: Optional[str] = Field(None, description="Codename of the permission")
+    content_type_id: Optional[int] = Field(None, description="ID of the content type")

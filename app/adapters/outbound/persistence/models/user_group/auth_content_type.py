@@ -1,20 +1,22 @@
-# app/adapters/outbound/persistence/models/auth_content_type.py
+# app/adapters/outbound/persistence/models/user_group/auth_content_type.py
 
 """
-Modelo de tipo de conteúdo para sistema de permissões.
+Modelo de persistência para ContentType.
 
-Este módulo define o modelo que representa tipos de conteúdo
-para o sistema de permissões, agrupando permissões relacionadas.
+Este módulo define o modelo SQLAlchemy que representa tipos de conteúdo
+para o sistema de permissões, mapeando entre o domínio e o banco de dados.
 """
 
 from sqlalchemy import Column, BigInteger, String, Index
 from sqlalchemy.orm import relationship
 from app.adapters.outbound.persistence.models.user_group.base_model import Base
+from app.domain.models.content_type import ContentType as DomainContentType
+from app.domain.models.content_type import Permission as DomainPermission
 
 
 class AuthContentType(Base):
     """
-    Modelo de tipo de conteúdo para sistema de permissões.
+    Modelo SQLAlchemy para tipo de conteúdo no sistema de permissões.
 
     Representa uma categoria ou tipo de conteúdo ao qual permissões
     podem ser associadas, como 'user', 'pet', 'specie', etc.
@@ -44,3 +46,45 @@ class AuthContentType(Base):
     def __repr__(self) -> str:
         """Representação em string do objeto AuthContentType."""
         return f"<AuthContentType(app_label='{self.app_label}', model='{self.model}')>"
+
+    def to_domain(self) -> DomainContentType:
+        """
+        Converte o modelo de persistência para o modelo de domínio.
+
+        Returns:
+            Instância do modelo de domínio ContentType
+        """
+        domain_permissions = [
+            DomainPermission(
+                id=perm.id,
+                name=perm.name,
+                codename=perm.codename,
+                content_type_id=perm.content_type_id
+            )
+            for perm in self.permissions
+        ]
+
+        return DomainContentType(
+            id=self.id,
+            app_label=self.app_label,
+            model=self.model,
+            permissions=domain_permissions
+        )
+
+    @classmethod
+    def from_domain(cls, domain_content_type: DomainContentType) -> 'AuthContentType':
+        """
+        Cria um modelo de persistência a partir do modelo de domínio.
+
+        Args:
+            domain_content_type: Modelo de domínio ContentType
+
+        Returns:
+            Instância do modelo de persistência AuthContentType
+        """
+        return cls(
+            id=domain_content_type.id,
+            app_label=domain_content_type.app_label,
+            model=domain_content_type.model
+        )
+        # Nota: as permissões são geralmente gerenciadas separadamente

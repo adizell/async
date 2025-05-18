@@ -4,12 +4,14 @@ from fastapi import APIRouter
 # Manter em ordem alfabética
 from app.adapters.inbound.api.v1.endpoints import (
     auth_endpoint,
-    client_endpoint,
-    user_endpoint,
+    auth_content_type_endpoint,
     auth_cookie_endpoint,
-    group_endpoint,
+    auth_group_permissions_endpoint,
     auth_permission_endpoint,
-    user_access_groups_endpoint
+    client_endpoint,
+    auth_group_endpoint,
+    user_access_groups_endpoint,
+    user_endpoint
 )
 
 api_router = APIRouter()
@@ -21,12 +23,14 @@ api_router.include_router(auth_cookie_endpoint.router)
 api_router.include_router(auth_endpoint.router)
 api_router.include_router(user_endpoint.router)
 
+# Incluir routers de permission, groups e content types
+api_router.include_router(auth_group_endpoint.router)
+api_router.include_router(auth_permission_endpoint.router)
+api_router.include_router(auth_content_type_endpoint.router)
+api_router.include_router(auth_group_permissions_endpoint.router)
+api_router.include_router(user_access_groups_endpoint.router)
+
 # Incluir routers dos clients (JWT e URL)
 api_router.include_router(client_endpoint.jwt_router)
 api_router.include_router(client_endpoint.create_url_router)
 api_router.include_router(client_endpoint.update_url_router)
-
-# Incluir routers AuthGroup AuthPermission AuthContentType
-api_router.include_router(user_access_groups_endpoint.router)
-api_router.include_router(group_endpoint.router)
-api_router.include_router(auth_permission_endpoint.router)

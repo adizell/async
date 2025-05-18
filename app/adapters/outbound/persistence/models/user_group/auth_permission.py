@@ -1,20 +1,21 @@
-# app/adapters/outbound/persistence/models/auth_permission.py
+# app/adapters/outbound/persistence/models/user_group/auth_permission.py
 
 """
-Modelo de permissão para controle de acesso.
+Modelo de persistência para Permission.
 
-Este módulo define o modelo de permissão utilizado no sistema
-de controle de acesso baseado em permissões e grupos.
+Este módulo define o modelo SQLAlchemy que representa permissões
+no sistema, mapeando entre o domínio e o banco de dados.
 """
 
 from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.adapters.outbound.persistence.models.user_group.base_model import Base
+from app.domain.models.content_type import Permission as DomainPermission
 
 
 class AuthPermission(Base):
     """
-    Modelo de permissão para controle de acesso.
+    Modelo SQLAlchemy para permissão no sistema de controle de acesso.
 
     Representa uma permissão específica que pode ser atribuída
     diretamente a um usuário ou a um grupo.
@@ -41,3 +42,35 @@ class AuthPermission(Base):
     def __repr__(self) -> str:
         """Representação em string do objeto AuthPermission."""
         return f"<AuthPermission(codename={self.codename})>"
+
+    def to_domain(self) -> DomainPermission:
+        """
+        Converte o modelo de persistência para o modelo de domínio.
+
+        Returns:
+            Instância do modelo de domínio Permission
+        """
+        return DomainPermission(
+            id=self.id,
+            name=self.name,
+            codename=self.codename,
+            content_type_id=self.content_type_id
+        )
+
+    @classmethod
+    def from_domain(cls, domain_permission: DomainPermission) -> 'AuthPermission':
+        """
+        Cria um modelo de persistência a partir do modelo de domínio.
+
+        Args:
+            domain_permission: Modelo de domínio Permission
+
+        Returns:
+            Instância do modelo de persistência AuthPermission
+        """
+        return cls(
+            id=domain_permission.id if domain_permission.id else None,
+            name=domain_permission.name,
+            codename=domain_permission.codename,
+            content_type_id=domain_permission.content_type_id
+        )
