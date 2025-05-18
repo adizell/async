@@ -182,7 +182,16 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
         return await self.get_multi(db, skip=skip, limit=limit, **filters)
 
     @staticmethod
-    def to_domain(db_model: User) -> DomainUser:
+    def to_domain(self, db_model: User) -> DomainUser:
+        """
+        Converte o modelo de persistência para o modelo de domínio.
+
+        Args:
+            db_model: Modelo ORM User
+
+        Returns:
+            DomainUser: Instância do modelo de domínio
+        """
         from app.domain.models.user_domain_model import Group, Permission
 
         groups = [
@@ -220,6 +229,74 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
             groups=groups,
             permissions=permissions,
         )
+
+    @staticmethod
+    def to_domain_static(db_model: User) -> DomainUser:
+        """
+        Versão estática de to_domain para compatibilidade com código existente.
+        """
+        from app.domain.models.user_domain_model import Group, Permission
+
+        groups = [
+            Group(
+                id=group_model.id,
+                name=group_model.name,
+                permissions=[
+                    Permission(
+                        id=perm.id,
+                        name=perm.name,
+                        codename=perm.codename,
+                        content_type_id=perm.content_type_id,
+                    ) for perm in group_model.permissions
+                ]
+            ) for group_model in db_model.groups
+        ]
+
+        permissions = [
+            Permission(
+                id=perm.id,
+                name=perm.name,
+                codename=perm.codename,
+                content_type_id=perm.content_type_id,
+            ) for perm in db_model.permissions
+        ]
+
+        return DomainUser(
+            id=db_model.id,
+            email=db_model.email,
+            password=db_model.password,
+            is_active=db_model.is_active,
+            is_superuser=db_model.is_superuser,
+            created_at=db_model.created_at,
+            updated_at=db_model.updated_at,
+            groups=groups,
+            permissions=permissions,
+        )
+
+    @classmethod
+    def from_domain(cls, domain_user: DomainUser) -> User:
+        """
+        Cria um modelo de persistência a partir do modelo de domínio.
+
+        Args:
+            domain_user: Modelo de domínio User
+
+        Returns:
+            User: Instância do modelo de persistência
+        """
+        user = User(
+            id=domain_user.id,
+            email=domain_user.email,
+            password=domain_user.password,
+            is_active=domain_user.is_active,
+            is_superuser=domain_user.is_superuser,
+            created_at=domain_user.created_at,
+            updated_at=domain_user.updated_at
+        )
+
+        # Nota: As relações (groups, permissions) geralmente são manipuladas separadamente
+
+        return user
 
 
 # Public instance for use

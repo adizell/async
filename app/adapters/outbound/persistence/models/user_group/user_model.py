@@ -1,4 +1,4 @@
-# app/adapters/outbound/persistence/models/user_model.py
+# app/adapters/outbound/persistence/models/user_group/user_model.py
 
 """
 Modelo de usuário e associações relacionadas.
@@ -114,3 +114,84 @@ class User(Base):
                 return True
 
         return False
+
+    # ----------------------------------------
+    # Métodos auxiliares de conversão para domínio
+    # ----------------------------------------
+    def to_domain(self) -> 'DomainUser':
+        """
+        Converte o modelo de persistência para o modelo de domínio.
+
+        Returns:
+            DomainUser: Instância do modelo de domínio
+        """
+        from app.domain.models.user_domain_model import User as DomainUser, Group, Permission
+
+        groups = [
+            Group(
+                id=group.id,
+                name=group.name,
+                permissions=[
+                    Permission(
+                        id=perm.id,
+                        name=perm.name,
+                        codename=perm.codename,
+                        content_type_id=perm.content_type_id,
+                    ) for perm in group.permissions
+                ]
+            ) for group in self.groups
+        ]
+
+        permissions = [
+            Permission(
+                id=perm.id,
+                name=perm.name,
+                codename=perm.codename,
+                content_type_id=perm.content_type_id,
+            ) for perm in self.permissions
+        ]
+
+        return DomainUser(
+            id=self.id,
+            email=self.email,
+            password=self.password,
+            is_active=self.is_active,
+            is_superuser=self.is_superuser,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            groups=groups,
+            permissions=permissions
+        )
+
+    @classmethod
+    def from_domain(cls, domain_user: 'DomainUser', existing_instance: 'User' = None) -> 'User':
+        """
+        Cria ou atualiza um modelo de persistência a partir do modelo de domínio.
+
+        Args:
+            domain_user: Modelo de domínio User
+            existing_instance: Instância existente de User para atualizar (opcional)
+
+        Returns:
+            User: Instância do modelo de persistência
+        """
+        if existing_instance:
+            # Atualiza a instância existente
+            existing_instance.email = domain_user.email
+            existing_instance.password = domain_user.password
+            existing_instance.is_active = domain_user.is_active
+            existing_instance.is_superuser = domain_user.is_superuser
+            if domain_user.updated_at:
+                existing_instance.updated_at = domain_user.updated_at
+            return existing_instance
+        else:
+            # Cria uma nova instância
+            return cls(
+                id=domain_user.id,
+                email=domain_user.email,
+                password=domain_user.password,
+                is_active=domain_user.is_active,
+                is_superuser=domain_user.is_superuser,
+                created_at=domain_user.created_at,
+                updated_at=domain_user.updated_at
+            )

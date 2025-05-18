@@ -117,6 +117,26 @@ class UserOutput(UserBase):
     class Config:
         from_attributes = True
 
+    @classmethod
+    def from_domain(cls, domain_user: 'DomainUser') -> 'UserOutput':
+        """
+        Cria um DTO a partir do modelo de domínio.
+
+        Args:
+            domain_user: Modelo de domínio User
+
+        Returns:
+            UserOutput: DTO para saída de dados do usuário
+        """
+        return cls(
+            id=domain_user.id,
+            email=domain_user.email,
+            is_active=domain_user.is_active,
+            is_superuser=domain_user.is_superuser,
+            created_at=domain_user.created_at,
+            updated_at=domain_user.updated_at
+        )
+
 
 class UserGroupsOutput(CustomBaseModel):
     """Schema for user with groups output."""

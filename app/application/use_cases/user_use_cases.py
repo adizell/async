@@ -121,35 +121,56 @@ class AsyncUserService:
     # Self‑service update
     # ────────────────────────────────
     async def update_self(self, user_id: UUID, data: UserSelfUpdate) -> User:
-        user = await self._get_user_by_id(user_id)
+        """
+        Atualiza os dados do próprio usuário.
+        """
+        # Obter usuário e converter para domínio
+        persistence_user = await self._get_user_by_id(user_id)
+        domain_user = persistence_user.to_domain()
 
-        # troca de senha
+        # Realizar validações e atualizações no objeto de domínio
         if data.password:
             if not data.current_password:
                 raise InvalidCredentialsException(message="Current password must be provided to change password.")
-            if not await UserAuthManager.verify_password(data.current_password, user.password):
+
+            if not await UserAuthManager.verify_password(data.current_password, domain_user.password):
                 raise InvalidCredentialsException(message="Current password incorrect.")
+
             is_valid, errors = InputValidator.validate_password(data.password)
             if not is_valid:
                 raise InvalidCredentialsException(message="; ".join(errors))
-            user.password = await UserAuthManager.hash_password(data.password)
 
-        # troca de e‑mail
-        if data.email and data.email != user.email:
+            domain_user.password = await UserAuthManager.hash_password(data.password)
+
+        if data.email and data.email != domain_user.email:
+            # Verificar duplicação
             dup_check = select(User.id).where(User.email == data.email, User.id != user_id)
             if (await self.db.execute(dup_check)).scalar_one_or_none():
                 raise ResourceAlreadyExistsException(message="Email already in use.")
-            user.email = data.email
 
+            domain_user.email = data.email
+
+        # Converter de volta para modelo de persistência para salvar
+        persistence_user = User.from_domain(domain_user)
+        self.db.add(persistence_user)
         await self.db.commit()
-        await self.db.refresh(user)
-        logger.info("User updated own profile: %s", user.email)
-        return user
+        await self.db.refresh(persistence_user)
+
+        # Reconverter para domínio antes de retornar
+        updated_domain_user = persistence_user.to_domain()
+
+        logger.info(f"User updated own profile: {updated_domain_user.email}")
+
+        # Retornar modelo de persistência por compatibilidade (ou converter para DTO)
+        return persistence_user
 
     # ────────────────────────────────
     # Admin update
     # ────────────────────────────────
     async def update_user(self, user_id: UUID, data: UserUpdate) -> User:
+        """
+        Atualiza um usuário existente (endpoint de admin).
+        """
         stmt = self._select_user_stmt(id=user_id)
         user = (await self.db.execute(stmt)).scalars().one_or_none()
         if not user:
@@ -172,9 +193,11 @@ class AsyncUserService:
         if data.is_superuser is not None:
             user.is_superuser = data.is_superuser
 
+        # Atualizar o modelo existente, não criar um novo
         await self.db.commit()
         await self.db.refresh(user)
-        logger.info("Admin updated user: %s", user.email)
+
+        logger.info(f"Admin updated user: {user.email}")
         return user
 
     # ────────────────────────────────

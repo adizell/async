@@ -7,8 +7,8 @@ This module implements the business logic for authentication operations,
 following Clean Architecture and Domain-Driven Design principles.
 """
 
-import logging
 import uuid
+import logging
 from datetime import datetime, timedelta, timezone
 
 from psycopg2 import IntegrityError
@@ -20,7 +20,8 @@ from app.adapters.outbound.persistence.repositories import user_repository
 from app.adapters.outbound.security.auth_user_manager import UserAuthManager
 from app.adapters.outbound.persistence.models.user_group.auth_group import AuthGroup
 from app.adapters.outbound.persistence.models.user_group.user_model import User
-from app.application.dtos.user_dto import UserCreate, TokenData
+from app.domain.models.user_domain_model import User as DomainUser
+from app.application.dtos.user_dto import UserCreate, TokenData, UserOutput
 from app.domain.exceptions import (
     ResourceAlreadyExistsException,
     ResourceNotFoundException,
@@ -61,11 +62,14 @@ class AsyncAuthService:
             if not group:
                 raise ResourceNotFoundException(message="Default group 'user' not found.")
 
+            # Usar o método original de criação para garantir compatibilidade
             hashed_password = await UserAuthManager.hash_password(user_input.password)
             user_data = user_input.model_copy(update={"password": hashed_password})
 
+            # Criar e salvar o usuário usando o repositório
             user = await user_repository.create(self.db, obj_in=user_data)
 
+            # Adicionar ao grupo padrão
             user.groups.append(group)
             await self.db.commit()
             await self.db.refresh(user)
