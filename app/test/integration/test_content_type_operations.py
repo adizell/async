@@ -1,7 +1,7 @@
 # app/test/integration/test_content_type_operations.py
 
 # Para Rodar o Script:
-# app/test/integration/test_content_type_operations.py -v
+# pytest app/test/integration/test_content_type_operations.py -v
 
 # Testes de Tipo de Conteúdo: Verificam o ciclo completo de CRUD para tipos de conteúdo.
 

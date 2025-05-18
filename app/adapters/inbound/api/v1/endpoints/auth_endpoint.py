@@ -1,7 +1,6 @@
 # app/adapters/inbound/api/v1/endpoints/auth_endpoint.py
 
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -28,6 +27,7 @@ from app.domain.exceptions import (
 )
 from app.shared.utils.error_responses import auth_errors
 from app.shared.utils.success_responses import auth_success
+from app.shared.utils.datetime_utils import DateTimeUtil  # Import our utility
 
 logger = logging.getLogger(__name__)
 
@@ -143,9 +143,9 @@ async def logout_user(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token does not contain JTI.")
 
         exp_timestamp = payload.get("exp")
-        # expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
-        expires_at = datetime.utcfromtimestamp(exp_timestamp)
-        revoked_at = datetime.utcnow()
+        # Using our utility to create timezone-naive datetime
+        expires_at = DateTimeUtil.timestamp_to_datetime(exp_timestamp).replace(tzinfo=None)
+        revoked_at = DateTimeUtil.utcnow_naive()
 
         await token_repository.add_to_blacklist(
             db, jti=jti, expires_at=expires_at, revoked_at=revoked_at

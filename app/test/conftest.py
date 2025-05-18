@@ -1,7 +1,6 @@
 # app/test/conftest.py
 
 import asyncio
-import datetime
 from uuid import uuid4
 
 import pytest
@@ -18,6 +17,7 @@ from app.adapters.outbound.persistence.models.user_group.client_model import Cli
 from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.adapters.outbound.persistence.repositories.client_repository import client_repository
 from app.adapters.outbound.security.auth_client_manager import ClientAuthManager
+from app.shared.utils.datetime_utils import DateTimeUtil  # Import our new utility
 
 # Carrega o .env
 load_dotenv(dotenv_path=".env")
@@ -120,7 +120,7 @@ async def create_test_user(db_session: AsyncSession):
         password=hashed_password,  # Senha já criptografada
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility instead of datetime.utcnow()
     )
     db_session.add(user)
     await db_session.commit()

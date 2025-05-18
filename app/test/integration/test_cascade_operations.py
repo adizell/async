@@ -7,7 +7,6 @@
 
 import pytest
 import uuid
-from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +16,7 @@ from app.application.use_cases.group_use_cases import AsyncGroupService
 from app.application.use_cases.user_group_use_cases import AsyncUserGroupService
 from app.application.dtos.group_dto import GroupCreate, UserGroupUpdate
 from app.domain.exceptions import ResourceNotFoundException
+from app.shared.utils.datetime_utils import DateTimeUtil  # Import our utility
 
 
 @pytest.mark.asyncio
@@ -39,7 +39,7 @@ async def test_delete_group_cascade(db_session: AsyncSession, create_test_user):
         password=hashed_password,
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility
     )
     db_session.add(test_user)
     await db_session.commit()
@@ -111,7 +111,7 @@ async def test_delete_user_cascade(db_session: AsyncSession, create_test_user):
         password=hashed_password,
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility
     )
     db_session.add(test_user)
     await db_session.commit()

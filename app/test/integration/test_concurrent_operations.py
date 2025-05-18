@@ -8,13 +8,13 @@
 import pytest
 import asyncio
 import uuid
-from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.application.use_cases.user_use_cases import AsyncUserService
 from app.application.dtos.user_dto import UserUpdate
+from app.shared.utils.datetime_utils import DateTimeUtil  # Import our utility
 
 
 @pytest.mark.asyncio
@@ -36,7 +36,7 @@ async def test_concurrent_user_updates(db_session: AsyncSession):
         password=hashed_password,
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility
     )
     db_session.add(user)
     await db_session.commit()
@@ -84,7 +84,7 @@ async def test_concurrent_user_updates(db_session: AsyncSession):
         try:
             stmt = select(User).where(User.id == user_id)
             result = await verify_session.execute(stmt)
-            final_user = result.scalars().one()
+            final_user = result.scalars().unique().one()  # Add unique() to fix duplication issue
 
             # O usuário final deve ter ambas as alterações
             assert final_user.email == update1.email
@@ -116,7 +116,7 @@ async def test_parallel_user_operations(db_session: AsyncSession):
         password=hashed_password,
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility
     )
 
     user2 = User(
@@ -125,7 +125,7 @@ async def test_parallel_user_operations(db_session: AsyncSession):
         password=hashed_password,
         is_active=True,
         is_superuser=False,
-        created_at=datetime.utcnow()
+        created_at=DateTimeUtil.utcnow_naive()  # Use our utility
     )
 
     db_session.add_all([user1, user2])

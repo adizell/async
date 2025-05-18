@@ -10,8 +10,7 @@ Este módulo fornece endpoints para:
 """
 
 import logging
-from datetime import datetime, timezone
-from uuid import uuid4
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +35,7 @@ from app.domain.exceptions import (
     ResourceInactiveException,
     DatabaseOperationException,
 )
+from app.shared.utils.datetime_utils import DateTimeUtil  # Import our utility
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -246,8 +246,8 @@ async def logout_with_cookies(
 
                 if jti and exp_timestamp:
                     # Converter timestamp para datetime
-                    expires_at = datetime.fromtimestamp(exp_timestamp)
-                    revoked_at = datetime.now()
+                    expires_at = DateTimeUtil.timestamp_to_datetime(exp_timestamp).replace(tzinfo=None)
+                    revoked_at = DateTimeUtil.utcnow_naive()
 
                     # Adicionar à blacklist
                     await token_repository.add_to_blacklist(
