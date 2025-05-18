@@ -7,6 +7,7 @@ Este módulo define o modelo de usuário e suas tabelas de associação
 com grupos e permissões, centralizando toda a lógica relacionada
 a usuários em um único arquivo.
 """
+from typing import Optional
 
 from sqlalchemy import (
     Column,
@@ -164,7 +165,7 @@ class User(Base):
         )
 
     @classmethod
-    def from_domain(cls, domain_user: 'DomainUser', existing_instance: 'User' = None) -> 'User':
+    def from_domain(cls, domain_user: 'DomainUser', existing_instance: Optional['User'] = None) -> 'User':
         """
         Cria ou atualiza um modelo de persistência a partir do modelo de domínio.
 
@@ -181,8 +182,11 @@ class User(Base):
             existing_instance.password = domain_user.password
             existing_instance.is_active = domain_user.is_active
             existing_instance.is_superuser = domain_user.is_superuser
+
+            # Apenas atualiza campos não-nulos
             if domain_user.updated_at:
                 existing_instance.updated_at = domain_user.updated_at
+
             return existing_instance
         else:
             # Cria uma nova instância

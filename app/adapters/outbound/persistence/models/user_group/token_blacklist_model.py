@@ -1,4 +1,4 @@
-# app/adapters/outbound/persistence/models/token_blacklist_model.py
+# app/adapters/outbound/persistence/models/user_group/token_blacklist_model.py
 
 """
 Modelo para blacklist de tokens.

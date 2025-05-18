@@ -145,16 +145,17 @@ class AsyncContentTypeService:
         Raises:
             PermissionDeniedException: Se o usuário não tiver permissão
             ResourceNotFoundException: Se o tipo de conteúdo não for encontrado
-            ResourceAlreadyExistsException: Se outro tipo de conteúdo já existir com o novo app_label e model
+            ResourceAlreadyExistsException: Se outro tipo com mesmo app_label e model já existir
         """
+        # Verificar permissão
         if not current_user.is_superuser and not current_user.has_permission("manage_permissions"):
             logger.warning(f"User {current_user.email} attempted to update content type without permission")
             raise PermissionDeniedException("You don't have permission to update content types")
 
-        # Verificar se existe
+        # Obter objeto existente
         current_content_type = await content_type_repository.get_by_id(self.db, content_type_id)
 
-        # Verificar se já existe outro com mesmo app_label e model
+        # Verificar duplicação
         if (current_content_type.app_label != app_label or current_content_type.model != model):
             existing_content_type = await content_type_repository.get_by_app_label_and_model(
                 self.db, app_label, model
@@ -165,14 +166,12 @@ class AsyncContentTypeService:
                     detail=f"Content type with app_label '{app_label}' and model '{model}' already exists"
                 )
 
-        # Atualizar
-        updated_content_type = ContentType(
-            id=content_type_id,
-            app_label=app_label,
-            model=model
-        )
+        # Atualizar os atributos no objeto de domínio existente
+        current_content_type.app_label = app_label
+        current_content_type.model = model
 
-        return await content_type_repository.update(self.db, content_type_id, updated_content_type)
+        # Passar o objeto existente atualizado
+        return await content_type_repository.update(self.db, content_type_id, current_content_type)
 
     async def delete_content_type(
             self, current_user: User, content_type_id: int

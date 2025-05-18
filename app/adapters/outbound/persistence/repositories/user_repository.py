@@ -103,14 +103,35 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
 
     async def update_with_password(self, db: AsyncSession, *, db_obj: User,
                                    obj_in: Union[UserUpdate, Dict[str, Any]]) -> User:
+        """
+        Update user with proper password handling.
+
+        Args:
+            db: Async database session
+            db_obj: Existing user object to update
+            obj_in: New data to apply (schema or dict)
+
+        Returns:
+            Updated User instance
+
+        Raises:
+            ResourceAlreadyExistsException: If email already exists
+            InvalidCredentialsException: If password validation fails
+            DatabaseOperationException: For other database errors
+        """
         try:
+            # Convert to dict if it's a schema
             update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
 
+            # Email uniqueness check
             if "email" in update_data and update_data["email"] != db_obj.email:
                 existing = await self.get_by_email(db, update_data["email"])
                 if existing and existing.id != db_obj.id:
-                    raise ResourceAlreadyExistsException(detail=f"Email '{update_data['email']}' is already in use.")
+                    raise ResourceAlreadyExistsException(
+                        detail=f"Email '{update_data['email']}' is already in use."
+                    )
 
+            # Password validation and hashing
             if "password" in update_data:
                 if update_data["password"]:
                     is_valid, errors = InputValidator.validate_password(update_data["password"])
@@ -118,9 +139,20 @@ class AsyncUserCRUD(AsyncCRUDBase[User, UserCreate, UserUpdate], IUserRepository
                         raise InvalidCredentialsException(message="; ".join(errors))
                     update_data["password"] = await UserAuthManager.hash_password(update_data["password"])
                 else:
+                    # Remove empty password from updates
                     del update_data["password"]
 
-            return await super().update(db, db_obj=db_obj, obj_in=update_data)
+            # Apply updates to existing object
+            for field in update_data:
+                if hasattr(db_obj, field):
+                    setattr(db_obj, field, update_data[field])
+
+            # Save changes
+            db.add(db_obj)
+            await db.commit()
+            await db.refresh(db_obj)
+
+            return db_obj
 
         except (ResourceAlreadyExistsException, InvalidCredentialsException):
             await db.rollback()

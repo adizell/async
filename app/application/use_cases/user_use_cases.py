@@ -1,4 +1,4 @@
-# app/application/use_cases/user_use_cases.py (async version)
+# app/application/use_cases/user_use_cases.py
 
 """
 Service for user management.
@@ -123,45 +123,49 @@ class AsyncUserService:
     async def update_self(self, user_id: UUID, data: UserSelfUpdate) -> User:
         """
         Atualiza os dados do próprio usuário.
-        """
-        # Obter usuário e converter para domínio
-        persistence_user = await self._get_user_by_id(user_id)
-        domain_user = persistence_user.to_domain()
 
-        # Realizar validações e atualizações no objeto de domínio
+        Args:
+            user_id: ID do usuário
+            data: Dados a serem atualizados
+
+        Returns:
+            User: Usuário atualizado
+
+        Raises:
+            ResourceNotFoundException: Se o usuário não for encontrado
+            ResourceAlreadyExistsException: Se o email já estiver em uso
+            InvalidCredentialsException: Se as credenciais forem inválidas
+        """
+        # Obter usuário existente
+        persistence_user = await self._get_user_by_id(user_id)
+
+        # Realizar validações e atualizações no objeto existente
+        if data.email and data.email != persistence_user.email:
+            # Verificar duplicação
+            dup_check = select(User.id).where(User.email == data.email, User.id != user_id)
+            if (await self.db.execute(dup_check)).scalar_one_or_none():
+                raise ResourceAlreadyExistsException(message="Email already in use.")
+            persistence_user.email = data.email
+
         if data.password:
             if not data.current_password:
                 raise InvalidCredentialsException(message="Current password must be provided to change password.")
 
-            if not await UserAuthManager.verify_password(data.current_password, domain_user.password):
+            if not await UserAuthManager.verify_password(data.current_password, persistence_user.password):
                 raise InvalidCredentialsException(message="Current password incorrect.")
 
             is_valid, errors = InputValidator.validate_password(data.password)
             if not is_valid:
                 raise InvalidCredentialsException(message="; ".join(errors))
 
-            domain_user.password = await UserAuthManager.hash_password(data.password)
+            persistence_user.password = await UserAuthManager.hash_password(data.password)
 
-        if data.email and data.email != domain_user.email:
-            # Verificar duplicação
-            dup_check = select(User.id).where(User.email == data.email, User.id != user_id)
-            if (await self.db.execute(dup_check)).scalar_one_or_none():
-                raise ResourceAlreadyExistsException(message="Email already in use.")
-
-            domain_user.email = data.email
-
-        # Converter de volta para modelo de persistência para salvar
-        persistence_user = User.from_domain(domain_user)
+        # Atualizar o modelo existente, não criar um novo
         self.db.add(persistence_user)
         await self.db.commit()
         await self.db.refresh(persistence_user)
 
-        # Reconverter para domínio antes de retornar
-        updated_domain_user = persistence_user.to_domain()
-
-        logger.info(f"User updated own profile: {updated_domain_user.email}")
-
-        # Retornar modelo de persistência por compatibilidade (ou converter para DTO)
+        logger.info(f"User updated own profile: {persistence_user.email}")
         return persistence_user
 
     # ────────────────────────────────
@@ -170,30 +174,47 @@ class AsyncUserService:
     async def update_user(self, user_id: UUID, data: UserUpdate) -> User:
         """
         Atualiza um usuário existente (endpoint de admin).
+
+        Args:
+            user_id: ID do usuário
+            data: Dados a serem atualizados
+
+        Returns:
+            User: Usuário atualizado
+
+        Raises:
+            ResourceNotFoundException: Se o usuário não for encontrado
+            ResourceAlreadyExistsException: Se o email já estiver em uso
+            InvalidCredentialsException: Se a senha for inválida
         """
+        # Obter usuário existente
         stmt = self._select_user_stmt(id=user_id)
         user = (await self.db.execute(stmt)).scalars().one_or_none()
         if not user:
             raise ResourceNotFoundException(message="User not found", resource_id=user_id)
 
+        # Validar e atualizar email
         if data.email and data.email != user.email:
             dup_check = select(User.id).where(User.email == data.email, User.id != user_id)
             if (await self.db.execute(dup_check)).scalar_one_or_none():
                 raise ResourceAlreadyExistsException(message="Email already in use.")
             user.email = data.email
 
+        # Validar e atualizar senha
         if data.password:
             is_valid, errors = InputValidator.validate_password(data.password)
             if not is_valid:
                 raise InvalidCredentialsException(message="; ".join(errors))
             user.password = await UserAuthManager.hash_password(data.password)
 
+        # Atualizar campos booleanos
         if data.is_active is not None:
             user.is_active = data.is_active
         if data.is_superuser is not None:
             user.is_superuser = data.is_superuser
 
-        # Atualizar o modelo existente, não criar um novo
+        # Atualizar no banco de dados
+        self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
 

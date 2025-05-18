@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.adapters.outbound.persistence.models.user_group.auth_content_type import AuthContentType
 from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
-from app.domain.models.content_type import ContentType as DomainContentType, Permission as DomainPermission
+from app.domain.models.content_type import ContentType as DomainContentType, Permission as DomainPermission, ContentType
 from app.domain.exceptions import ResourceNotFoundException, DatabaseOperationException
 
 
@@ -169,23 +169,25 @@ class ContentTypeRepository:
 
     @staticmethod
     async def update(
-            db: AsyncSession, content_type_id: int, domain_content_type: DomainContentType
-    ) -> DomainContentType:
+            db: AsyncSession, content_type_id: int, domain_content_type: ContentType
+    ) -> ContentType:
         """
         Atualiza um ContentType existente.
 
         Args:
             db: Sessão de banco de dados
             content_type_id: ID do tipo de conteúdo a atualizar
-            domain_content_type: Objeto ContentType do domínio
+            domain_content_type: Objeto ContentType do domínio com novos valores
 
         Returns:
-            ContentType do domínio atualizado
+            ContentType atualizado
 
         Raises:
             ResourceNotFoundException: Se o tipo de conteúdo não for encontrado
+            DatabaseOperationException: Em caso de erro no banco de dados
         """
         try:
+            # Obter o registro existente
             stmt = select(AuthContentType).where(AuthContentType.id == content_type_id)
             result = await db.execute(stmt)
             content_type = result.scalars().one_or_none()
@@ -196,12 +198,15 @@ class ContentTypeRepository:
                     resource_id=content_type_id
                 )
 
+            # Atualizar atributos do objeto existente
             content_type.app_label = domain_content_type.app_label
             content_type.model = domain_content_type.model
 
+            # Persistir alterações
             await db.flush()
             await db.refresh(content_type)
 
+            # Retornar objeto de domínio atualizado
             return content_type.to_domain()
 
         except ResourceNotFoundException:

@@ -1,4 +1,4 @@
-# app/adapters/outbound/persistence/models/base_model.py
+# app/adapters/outbound/persistence/models/user_group/base_model.py
 
 """
 Base class for SQLAlchemy models.

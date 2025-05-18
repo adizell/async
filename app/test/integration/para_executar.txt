@@ -1,0 +1,2 @@
+# Para executar estes testes, você pode usar o pytest com o comando:
+pytest app/test/integration/ -v

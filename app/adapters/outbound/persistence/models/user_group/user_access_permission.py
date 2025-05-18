@@ -1,4 +1,4 @@
-# app/adapters/outbound/persistence/models/user_access_permission.py
+# app/adapters/outbound/persistence/models/user_group/user_access_permission.py
 
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import UUID

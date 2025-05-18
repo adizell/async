@@ -155,17 +155,31 @@ class AsyncCRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def update(self, db: AsyncSession, *, db_obj: ModelType,
                      obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
-        """Update an existing record."""
+        """
+        Update an existing record.
+
+        Args:
+            db: Async database session
+            db_obj: Existing database object to update
+            obj_in: New data to apply (schema or dict)
+
+        Returns:
+            Updated model instance
+
+        Raises:
+            ResourceAlreadyExistsException: If update violates unique constraints
+            DatabaseOperationException: For other database errors
+        """
         try:
-            # Get current entity data
-            obj_data = jsonable_encoder(db_obj)
+            # Convert input data to dictionary if it's a schema
             update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
 
-            for field in obj_data:
-                if field in update_data:
-                    setattr(db_obj, field, update_data[field])
+            # Apply updates to existing object
+            for field, value in update_data.items():
+                if hasattr(db_obj, field):
+                    setattr(db_obj, field, value)
 
-            # Save changes
+            # Save changes to database
             db.add(db_obj)
             await db.commit()
             await db.refresh(db_obj)

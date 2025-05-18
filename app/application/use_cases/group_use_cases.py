@@ -169,23 +169,27 @@ class AsyncGroupService:
             ResourceNotFoundException: If the group doesn't exist
             ResourceAlreadyExistsException: If the new name already exists
         """
+        # Verificar permissão
         if not current_user.is_superuser and not current_user.has_permission("manage_groups"):
             logger.warning(f"User {current_user.email} attempted to update a group without permission")
             raise PermissionDeniedException("You don't have permission to update groups")
 
-        # Get existing group
+        # Obter grupo existente
         group = await self._get_group_by_id(group_id)
 
-        # Update group
+        # Atualizar atributos (apenas se fornecidos)
         if data.name and data.name != group.name:
-            # Check if new name already exists
+            # Verificar duplicação de nome
             if await self._check_name_exists(data.name, exclude_id=group_id):
                 logger.warning(f"Group with name '{data.name}' already exists")
                 raise ResourceAlreadyExistsException(detail=f"Group with name '{data.name}' already exists")
 
+            # Atualizar nome no objeto existente
             group.name = data.name
 
         try:
+            # Persistir alterações
+            self.db.add(group)
             await self.db.commit()
             await self.db.refresh(group)
 
