@@ -67,7 +67,7 @@ async def test_user_self_update_success(db_session: AsyncSession):
     # Verificar diretamente no banco de dados
     stmt = select(User).where(User.id == user_id)
     result = await db_session.execute(stmt)
-    db_user = result.scalars().one()
+    db_user = result.scalars().unique().one()  # Add unique() here
 
     assert db_user.email == new_email, "Alteração do email deve ser persistida no banco"
 
@@ -169,7 +169,7 @@ async def test_user_admin_update_multiple_fields(db_session: AsyncSession):
     # Verificar diretamente no banco de dados
     stmt = select(User).where(User.id == user_id)
     result = await db_session.execute(stmt)
-    db_user = result.scalars().one()
+    db_user = result.scalars().unique().one()  # Add unique() here
 
     assert db_user.email == new_email
     assert db_user.is_active == False

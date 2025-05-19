@@ -337,3 +337,46 @@ class AsyncUserGroupService:
             await self.db.rollback()
             logger.exception(f"Error updating superuser status: {str(e)}")
             raise DatabaseOperationException(message="Error updating superuser status", original_error=e)
+
+    # ────────────────────────────────
+    # Remover user do grupo
+    # ────────────────────────────────
+    async def remove_user_from_groups(self, current_user: User, user_id: UUID, data: UserGroupUpdate) -> User:
+        """
+        Remove a user from multiple groups.
+
+        Args:
+            current_user: The authenticated user
+            user_id: ID of the user
+            data: List of group IDs to remove the user from
+
+        Returns:
+            Updated user with groups
+        """
+        if not current_user.is_superuser and not current_user.has_permission("manage_user_groups"):
+            logger.warning(f"User {current_user.email} attempted to modify user groups without permission")
+            raise PermissionDeniedException("You don't have permission to modify user groups")
+
+        # Get target user
+        user = await self._get_user_by_id(user_id)
+
+        try:
+            # Get groups to remove
+            stmt = select(AuthGroup).where(AuthGroup.id.in_(data.group_ids))
+            groups_to_remove = (await self.db.execute(stmt)).scalars().all()
+
+            # Remove groups from user
+            for group in groups_to_remove:
+                if group in user.groups:
+                    user.groups.remove(group)
+
+            await self.db.commit()
+            await self.db.refresh(user)
+
+            logger.info(f"User {user_id} removed from groups {data.group_ids} by {current_user.email}")
+            return user
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.exception(f"Error removing user from groups: {str(e)}")
+            raise DatabaseOperationException(message="Error removing user from groups", original_error=e)

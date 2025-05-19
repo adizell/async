@@ -13,11 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.persistence.models.user_group.auth_group import AuthGroup
 from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
-from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.application.use_cases.group_use_cases import AsyncGroupService
-from app.application.use_cases.permission_use_cases import AsyncPermissionService
 from app.application.dtos.group_dto import GroupCreate, GroupUpdate, GroupPermissionUpdate
-from app.domain.exceptions import ResourceAlreadyExistsException, ResourceNotFoundException
+from app.domain.exceptions import ResourceAlreadyExistsException
 
 
 @pytest.mark.asyncio
@@ -57,7 +55,7 @@ async def test_group_create_update_cycle(db_session: AsyncSession, create_test_u
     # Verificar diretamente no banco de dados
     stmt = select(AuthGroup).where(AuthGroup.id == created_group.id)
     result = await db_session.execute(stmt)
-    db_group = result.scalars().one()
+    db_group = result.scalars().unique().one()  # Add unique() here
 
     assert db_group.name == new_name
 

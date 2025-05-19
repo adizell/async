@@ -69,7 +69,7 @@ async def test_transaction_rollback_on_error(db_session: AsyncSession):
     # Verificar se o estado original foi mantido (rollback funcionou)
     stmt = select(User).where(User.id == user_id)
     result = await db_session.execute(stmt)
-    fetched_user = result.scalars().one()
+    fetched_user = result.scalars().unique().one()  # Add unique() here
 
     # O usuário deve ainda estar ativo, já que houve rollback da transação
     assert fetched_user.is_active == True, "A transação deveria ter feito rollback"
@@ -114,7 +114,7 @@ async def test_transaction_commit_success(db_session: AsyncSession):
     # Verificar se ambos foram criados
     stmt = select(User).where(User.id.in_([user1_id, user2_id]))
     result = await db_session.execute(stmt)
-    users = result.scalars().all()
+    users = result.scalars().unique().all()  # Add unique() here
 
     assert len(users) == 2, "Ambos os usuários deveriam ter sido criados"
 

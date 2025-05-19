@@ -62,7 +62,7 @@ async def test_delete_group_cascade(db_session: AsyncSession, create_test_user):
         (user_access_groups.c.group_id == group.id)
     )
     result = await db_session.execute(check_stmt)
-    association = result.one_or_none()
+    association = result.unique().one_or_none()  # Add unique() here
 
     assert association is not None, "A associação deveria existir"
 
@@ -79,14 +79,14 @@ async def test_delete_group_cascade(db_session: AsyncSession, create_test_user):
         (user_access_groups.c.group_id == group.id)
     )
     result = await db_session.execute(check_stmt)
-    association = result.one_or_none()
+    association = result.unique().one_or_none()  # Add unique() here
 
     assert association is None, "A associação deveria ter sido excluída em cascata"
 
     # Verificar se o usuário ainda existe
     user_stmt = select(User).where(User.id == test_user.id)
     result = await db_session.execute(user_stmt)
-    user = result.scalars().one_or_none()
+    user = result.scalars().unique().one_or_none()  # Add unique() here
 
     assert user is not None, "O usuário não deveria ser excluído"
 
@@ -135,7 +135,7 @@ async def test_delete_user_cascade(db_session: AsyncSession, create_test_user):
     # Verificar se as associações foram criadas
     check_stmt = select(user_access_groups).where(user_access_groups.c.user_id == test_user.id)
     result = await db_session.execute(check_stmt)
-    associations = result.all()
+    associations = result.unique().all()  # Add unique() here
 
     assert len(associations) == 2, "Deveriam existir duas associações"
 
@@ -146,13 +146,13 @@ async def test_delete_user_cascade(db_session: AsyncSession, create_test_user):
     # Verificar se as associações foram excluídas (cascata)
     check_stmt = select(user_access_groups).where(user_access_groups.c.user_id == test_user.id)
     result = await db_session.execute(check_stmt)
-    associations = result.all()
+    associations = result.unique().all()  # Add unique() here
 
     assert len(associations) == 0, "As associações deveriam ter sido excluídas em cascata"
 
     # Verificar se os grupos ainda existem
     group_stmt = select(AuthGroup).where(AuthGroup.id.in_([group1.id, group2.id]))
     result = await db_session.execute(group_stmt)
-    groups = result.scalars().all()
+    groups = result.scalars().unique().all()  # Add unique() here
 
     assert len(groups) == 2, "Os grupos não deveriam ser excluídos"
