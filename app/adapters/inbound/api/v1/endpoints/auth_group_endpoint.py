@@ -91,8 +91,8 @@ async def create_group(
 )
 async def list_groups(
         db: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_permissions_current_user),
-        params: Params = Depends(pagination_params)
+        params: Params = Depends(pagination_params),
+        current_user: User = Depends(get_permissions_current_user)
 ):
     """
     List all permission groups with pagination.

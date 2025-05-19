@@ -1,0 +1,649 @@
+(.venv) PS C:\pycharm\fastapi-hexagonal-async> pytest
+C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py:217: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+FF.FEFFFF..FF...FFF.F........................................                                                                                                                [100%]
+===================================================================================== ERRORS ======================================================================================
+_______________________________________________________________ ERROR at teardown of test_parallel_user_operations ________________________________________________________________
+  + Exception Group Traceback (most recent call last):
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 341, in from_call
+  |     result: TResult | None = func()
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 242, in <lambda>
+  |     lambda: runtest_hook(item=item, **kwds), when=when, reraise=reraise
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_hooks.py", line 513, in __call__
+  |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+  |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 139, in _multicall
+  |     raise exception.with_traceback(exception.__traceback__)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 122, in _multicall
+  |     teardown.throw(exception)  # type: ignore[union-attr]
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\threadexception.py", line 97, in pytest_runtest_teardown
+  |     yield from thread_exception_runtest_hook()
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\threadexception.py", line 68, in thread_exception_runtest_hook
+  |     yield
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 122, in _multicall
+  |     teardown.throw(exception)  # type: ignore[union-attr]
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\unraisableexception.py", line 100, in pytest_runtest_teardown
+  |     yield from unraisable_exception_runtest_hook()
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\unraisableexception.py", line 70, in unraisable_exception_runtest_hook
+  |     yield
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 122, in _multicall
+  |     teardown.throw(exception)  # type: ignore[union-attr]
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\logging.py", line 853, in pytest_runtest_teardown
+  |     yield from self._runtest_for(item, "teardown")
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\logging.py", line 829, in _runtest_for
+  |     yield
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 122, in _multicall
+  |     teardown.throw(exception)  # type: ignore[union-attr]
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\capture.py", line 903, in pytest_runtest_teardown
+  |     return (yield)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pluggy\_callers.py", line 103, in _multicall
+  |     res = hook_impl.function(*args)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 189, in pytest_runtest_teardown
+  |     item.session._setupstate.teardown_exact(nextitem)
+  |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 557, in teardown_exact
+  |     raise exceptions[0]
+  | exceptiongroup.ExceptionGroup: errors while tearing down <Coroutine test_parallel_user_operations> (2 sub-exceptions)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 546, in teardown_exact
+    |     fin()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\fixtures.py", line 1032, in finish
+    |     raise exceptions[0]
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\fixtures.py", line 1021, in finish
+    |     fin()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py", line 363, in finalizer
+    |     event_loop.run_until_complete(task)
+    |   File "C:\Users\ALP\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
+    |     return future.result()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py", line 354, in async_finalizer
+    |     await gen_obj.__anext__()  # type: ignore[union-attr]
+    |   File "C:\pycharm\fastapi-hexagonal-async\app\test\conftest.py", line 53, in db_session
+    |     await session.aclose()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 1061, in aclose
+    |     await self.close()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 1031, in close
+    |     await greenlet_spawn(self.sync_session.close)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 190, in greenlet_spawn
+    |     result = context.switch(*args, **kwargs)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2521, in close
+    |     self._close_impl(invalidate=False)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2590, in _close_impl
+    |     transaction.close(invalidate)
+    |   File "<string>", line 2, in close
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 121, in _go
+    |     raise sa_exc.IllegalStateChangeError(
+    | sqlalchemy.exc.IllegalStateChangeError: Method 'close()' can't be called here; method '_connection_for_bind()' is already in progress and this would cause an unexpected state change to <SessionTransactionState.CLOSED: 5> (Background on this error at: https://sqlalche.me/e/20/isce)
+    +---------------- 2 ----------------
+    | Traceback (most recent call last):
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\runner.py", line 546, in teardown_exact
+    |     fin()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\fixtures.py", line 1032, in finish
+    |     raise exceptions[0]
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\_pytest\fixtures.py", line 1021, in finish
+    |     fin()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py", line 363, in finalizer
+    |     event_loop.run_until_complete(task)
+    |   File "C:\Users\ALP\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
+    |     return future.result()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py", line 354, in async_finalizer
+    |     await gen_obj.__anext__()  # type: ignore[union-attr]
+    |   File "C:\pycharm\fastapi-hexagonal-async\app\test\conftest.py", line 170, in cleanup_after_test
+    |     await db_session.rollback()
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 1005, in rollback
+    |     await greenlet_spawn(self.sync_session.rollback)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 190, in greenlet_spawn
+    |     result = context.switch(*args, **kwargs)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1994, in rollback
+    |     self._transaction.rollback(_to_root=True)
+    |   File "<string>", line 2, in rollback
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 103, in _go
+    |     self._raise_for_prerequisite_state(fn.__name__, current_state)
+    |   File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 990, in _raise_for_prerequisite_state
+    |     raise sa_exc.InvalidRequestError(
+    | sqlalchemy.exc.InvalidRequestError: This session is provisioning a new connection; concurrent operations are not permitted (Background on this error at: https://sqlalche.me/e/20/isce)
+    +------------------------------------
+==================================================================================== FAILURES ===================================================================================== 
+____________________________________________________________________________ test_delete_group_cascade ____________________________________________________________________________ 
+app\test\integration\test_cascade_operations.py:57: in test_delete_group_cascade
+    await user_group_service.add_user_to_groups(superuser, test_user.id, group_data)
+app\application\use_cases\user_group_use_cases.py:100: in add_user_to_groups
+    groups = await self._get_groups_by_ids(data.group_ids)
+app\application\use_cases\user_group_use_cases.py:63: in _get_groups_by_ids
+    groups = (await self.db.execute(stmt)).scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr setup ------------------------------------------------------------------------------ 
+2025-05-19 08:49:27,768 DEBUG asyncio: Using proactor: IocpProactor
+2025-05-19 08:49:27,778 DEBUG asyncio: Using proactor: IocpProactor
+2025-05-19 08:49:27,778 DEBUG passlib.handlers.bcrypt: detected 'bcrypt' backend, version '3.2.2'
+2025-05-19 08:49:27,778 DEBUG passlib.handlers.bcrypt: 'bcrypt' backend lacks $2$ support, enabling workaround
+------------------------------------------------------------------------------- Captured log setup -------------------------------------------------------------------------------- 
+DEBUG    asyncio:proactor_events.py:630 Using proactor: IocpProactor
+DEBUG    asyncio:proactor_events.py:630 Using proactor: IocpProactor
+DEBUG    passlib.handlers.bcrypt:bcrypt.py:625 detected 'bcrypt' backend, version '3.2.2'
+DEBUG    passlib.handlers.bcrypt:bcrypt.py:406 'bcrypt' backend lacks $2$ support, enabling workaround
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:28,791 INFO app.application.use_cases.group_use_cases: Group 'cascade-test-group-3a04f1cf-15e4-47af-ad33-5d6405675887' created by usertest-48bbcddc-0eaf-41cc-8101-5d83790078d8@example.com
+-------------------------------------------------------------------------------- Captured log call --------------------------------------------------------------------------------
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'cascade-test-group-3a04f1cf-15e4-47af-ad33-5d6405675887' created by usertest-48bbcddc-0eaf-41cc-8101-5d83790078d8@example.com
+____________________________________________________________________________ test_delete_user_cascade _____________________________________________________________________________ 
+app\test\integration\test_cascade_operations.py:133: in test_delete_user_cascade
+    await user_group_service.add_user_to_groups(superuser, test_user.id, group_data)
+app\application\use_cases\user_group_use_cases.py:100: in add_user_to_groups
+    groups = await self._get_groups_by_ids(data.group_ids)
+app\application\use_cases\user_group_use_cases.py:63: in _get_groups_by_ids
+    groups = (await self.db.execute(stmt)).scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:29,833 INFO app.application.use_cases.group_use_cases: Group 'user-cascade-group1-a09b6e4b-7ff1-4764-b0ed-9a093f2664c4' created by usertest-e3c91829-48d9-4d74-ab18-f6c4f5d275e9@example.com
+2025-05-19 08:49:29,847 INFO app.application.use_cases.group_use_cases: Group 'user-cascade-group2-8efbdf00-c562-421b-98bd-1b05cfa61c17' created by usertest-e3c91829-48d9-4d74-ab18-f6c4f5d275e9@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'user-cascade-group1-a09b6e4b-7ff1-4764-b0ed-9a093f2664c4' created by usertest-e3c91829-48d9-4d74-ab18-f6c4f5d275e9@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'user-cascade-group2-8efbdf00-c562-421b-98bd-1b05cfa61c17' created by usertest-e3c91829-48d9-4d74-ab18-f6c4f5d275e9@example.com
+__________________________________________________________________________ test_parallel_user_operations __________________________________________________________________________ 
+app\test\integration\test_concurrent_operations.py:150: in test_parallel_user_operations
+    user1_result, user2_result = await asyncio.gather(update_user1(), update_user2())
+app\test\integration\test_concurrent_operations.py:144: in update_user2
+    return await service.update_user(
+app\application\use_cases\user_use_cases.py:192: in update_user
+    user = (await self.db.execute(stmt)).scalars().one_or_none()
+.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py:463: in execute
+    result = await greenlet_spawn(
+.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:190: in greenlet_spawn
+    result = context.switch(*args, **kwargs)
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2365: in execute
+    return self._execute_internal(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2241: in _execute_internal
+    conn = self._connection_for_bind(bind)
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2110: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+<string>:2: in _connection_for_bind
+    ???
+.venv\lib\site-packages\sqlalchemy\orm\state_changes.py:103: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+.venv\lib\site-packages\sqlalchemy\orm\session.py:990: in _raise_for_prerequisite_state
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: This session is provisioning a new connection; concurrent operations are not permitted (Background on this error at: https://sqlalche.me/e/20/isce)
+______________________________________________________________________ test_content_type_create_update_cycle ______________________________________________________________________ 
+app\adapters\outbound\persistence\repositories\content_type_repository.py:161: in create
+    return content_type.to_domain()
+app\adapters\outbound\persistence\models\user_group\auth_content_type.py:64: in to_domain
+    for perm in self.permissions
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1121: in _fire_loader_callables
+    return self.callable_(state, passive)
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:978: in _load_for_state
+    return self._emit_lazyload(
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:1141: in _emit_lazyload
+    result = session.execute(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2365: in execute
+    return self._execute_internal(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2251: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv\lib\site-packages\sqlalchemy\orm\context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+.venv\lib\site-packages\sqlalchemy\sql\elements.py:523: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1638: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1843: in _execute_context
+    return self._exec_single_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1983: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:2355: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv\lib\site-packages\sqlalchemy\engine\default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py:580: in execute
+    self._adapt_connection.await_(
+.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:123: in await_only
+    raise exc.MissingGreenlet(
+E   sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+During handling of the above exception, another exception occurred:
+app\test\integration\test_content_type_operations.py:36: in test_content_type_create_update_cycle
+    created_ct = await service.create_content_type(superuser, app_label, model)
+app\application\use_cases\content_type_use_cases.py:128: in create_content_type
+    return await content_type_repository.create(self.db, new_content_type)
+app\adapters\outbound\persistence\repositories\content_type_repository.py:165: in create
+    raise DatabaseOperationException(
+E   app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+------------------------------------------------------------------------------ Captured stderr setup ------------------------------------------------------------------------------ 
+2025-05-19 08:49:31,603 ERROR asyncio: Task exception was never retrieved
+future: <Task finished name='Task-33' coro=<<async_generator_athrow without __name__>()> exception=InterfaceError("(sqlalchemy.dialects.postgresql.asyncpg.InterfaceError) <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress")>
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 70, in get_db_context
+    yield session
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 96, in get_db
+    yield session
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 876, in rollback
+    self.await_(self._rollback_and_discard())
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 857, in _rollback_and_discard
+    await self._transaction.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\transaction.py", line 227, in rollback
+    await self.__rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\transaction.py", line 206, in __rollback
+    await self._connection.execute(query)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\connection.py", line 349, in execute
+    result = await self._protocol.query(query, timeout)
+  File "asyncpg\\protocol\\protocol.pyx", line 360, in query
+  File "asyncpg\\protocol\\protocol.pyx", line 745, in asyncpg.protocol.protocol.BaseProtocol._check_state
+asyncpg.exceptions._base.InterfaceError: cannot perform operation: another operation is in progress
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1125, in _rollback_impl
+    self.engine.dialect.do_rollback(self.connection)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 703, in do_rollback
+    dbapi_connection.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 882, in rollback
+    self._handle_exception(error)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 792, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.InterfaceError: <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 95, in get_db
+    async with get_db_context() as session:
+  File "C:\Users\ALP\AppData\Local\Programs\Python\Python310\lib\contextlib.py", line 217, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 76, in get_db_context
+    await session.close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 1031, in close
+    await greenlet_spawn(self.sync_session.close)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2521, in close
+    self._close_impl(invalidate=False)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2590, in _close_impl
+    transaction.close(invalidate)
+  File "<string>", line 2, in close
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1419, in close
+    transaction.close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2586, in close
+    self._do_close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2724, in _do_close
+    self._close_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2710, in _close_impl
+    self._connection_rollback_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2702, in _connection_rollback_impl
+    self.connection._rollback_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1127, in _rollback_impl
+    self._handle_dbapi_exception(e, None, None, None, None)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1125, in _rollback_impl
+    self.engine.dialect.do_rollback(self.connection)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 703, in do_rollback
+    dbapi_connection.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 882, in rollback
+    self._handle_exception(error)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 792, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.InterfaceError: (sqlalchemy.dialects.postgresql.asyncpg.InterfaceError) <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress
+(Background on this error at: https://sqlalche.me/e/20/rvf5)
+------------------------------------------------------------------------------- Captured log setup -------------------------------------------------------------------------------- 
+ERROR    asyncio:base_events.py:1758 Task exception was never retrieved
+future: <Task finished name='Task-33' coro=<<async_generator_athrow without __name__>()> exception=InterfaceError("(sqlalchemy.dialects.postgresql.asyncpg.InterfaceError) <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress")>
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 70, in get_db_context
+    yield session
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 96, in get_db
+    yield session
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 876, in rollback
+    self.await_(self._rollback_and_discard())
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 857, in _rollback_and_discard
+    await self._transaction.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\transaction.py", line 227, in rollback
+    await self.__rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\transaction.py", line 206, in __rollback
+    await self._connection.execute(query)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\asyncpg\connection.py", line 349, in execute
+    result = await self._protocol.query(query, timeout)
+  File "asyncpg\\protocol\\protocol.pyx", line 360, in query
+  File "asyncpg\\protocol\\protocol.pyx", line 745, in asyncpg.protocol.protocol.BaseProtocol._check_state
+asyncpg.exceptions._base.InterfaceError: cannot perform operation: another operation is in progress
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1125, in _rollback_impl
+    self.engine.dialect.do_rollback(self.connection)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 703, in do_rollback
+    dbapi_connection.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 882, in rollback
+    self._handle_exception(error)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 792, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.InterfaceError: <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 95, in get_db
+    async with get_db_context() as session:
+  File "C:\Users\ALP\AppData\Local\Programs\Python\Python310\lib\contextlib.py", line 217, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "C:\pycharm\fastapi-hexagonal-async\app\adapters\outbound\persistence\database.py", line 76, in get_db_context
+    await session.close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 1031, in close
+    await greenlet_spawn(self.sync_session.close)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2521, in close
+    self._close_impl(invalidate=False)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2590, in _close_impl
+    transaction.close(invalidate)
+  File "<string>", line 2, in close
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1419, in close
+    transaction.close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2586, in close
+    self._do_close()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2724, in _do_close
+    self._close_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2710, in _close_impl
+    self._connection_rollback_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2702, in _connection_rollback_impl
+    self.connection._rollback_impl()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1127, in _rollback_impl
+    self._handle_dbapi_exception(e, None, None, None, None)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1125, in _rollback_impl
+    self.engine.dialect.do_rollback(self.connection)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 703, in do_rollback
+    dbapi_connection.rollback()
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 882, in rollback
+    self._handle_exception(error)
+  File "C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 792, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.InterfaceError: (sqlalchemy.dialects.postgresql.asyncpg.InterfaceError) <class 'asyncpg.exceptions._base.InterfaceError'>: cannot perform operation: another operation is in progress
+(Background on this error at: https://sqlalche.me/e/20/rvf5)
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:31,657 INFO app.application.use_cases.user_use_cases: Admin updated user: updated1-71e5ae9d-3aa9-4c4c-8e4b-8fcb4d3373b1@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.user_use_cases:user_use_cases.py:221 Admin updated user: updated1-71e5ae9d-3aa9-4c4c-8e4b-8fcb4d3373b1@example.com
+___________________________________________________________________________ test_content_type_duplicate ___________________________________________________________________________ 
+app\adapters\outbound\persistence\repositories\content_type_repository.py:161: in create
+    return content_type.to_domain()
+app\adapters\outbound\persistence\models\user_group\auth_content_type.py:64: in to_domain
+    for perm in self.permissions
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1121: in _fire_loader_callables
+    return self.callable_(state, passive)
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:978: in _load_for_state
+    return self._emit_lazyload(
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:1141: in _emit_lazyload
+    result = session.execute(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2365: in execute
+    return self._execute_internal(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2251: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv\lib\site-packages\sqlalchemy\orm\context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+.venv\lib\site-packages\sqlalchemy\sql\elements.py:523: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1638: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1843: in _execute_context
+    return self._exec_single_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1983: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:2355: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv\lib\site-packages\sqlalchemy\engine\default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py:580: in execute
+    self._adapt_connection.await_(
+.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:123: in await_only
+    raise exc.MissingGreenlet(
+E   sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+During handling of the above exception, another exception occurred:
+app\test\integration\test_content_type_operations.py:90: in test_content_type_duplicate
+    await service.create_content_type(superuser, app_label, model)
+app\application\use_cases\content_type_use_cases.py:128: in create_content_type
+    return await content_type_repository.create(self.db, new_content_type)
+app\adapters\outbound\persistence\repositories\content_type_repository.py:165: in create
+    raise DatabaseOperationException(
+E   app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+---------------------------------------------------------------------------- Captured stderr teardown ----------------------------------------------------------------------------- 
+2025-05-19 08:49:33,155 ERROR sqlalchemy.pool.impl.AsyncAdaptedQueuePool: The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <asyncpg.connecti
+on.Connection object at 0x000001D0F07889A0>>, which will be terminated.  Please ensure that SQLAlchemy pooled connections are returned to the pool explicitly, either by calling ``close()`` or by using appropriate context managers to manage their lifecycle.
+2025-05-19 08:49:33,158 ERROR sqlalchemy.pool.impl.AsyncAdaptedQueuePool: The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <asyncpg.connecti
+on.Connection object at 0x000001D0F027BA60>>, which will be terminated.  Please ensure that SQLAlchemy pooled connections are returned to the pool explicitly, either by calling ``close()`` or by using appropriate context managers to manage their lifecycle.
+____________________________________________________________________________ test_content_type_delete _____________________________________________________________________________ 
+app\adapters\outbound\persistence\repositories\content_type_repository.py:161: in create
+    return content_type.to_domain()
+app\adapters\outbound\persistence\models\user_group\auth_content_type.py:64: in to_domain
+    for perm in self.permissions
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1121: in _fire_loader_callables
+    return self.callable_(state, passive)
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:978: in _load_for_state
+    return self._emit_lazyload(
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:1141: in _emit_lazyload
+    result = session.execute(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2365: in execute
+    return self._execute_internal(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2251: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv\lib\site-packages\sqlalchemy\orm\context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+.venv\lib\site-packages\sqlalchemy\sql\elements.py:523: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1638: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1843: in _execute_context
+    return self._exec_single_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1983: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:2355: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv\lib\site-packages\sqlalchemy\engine\default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py:580: in execute
+    self._adapt_connection.await_(
+.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:123: in await_only
+    raise exc.MissingGreenlet(
+E   sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+During handling of the above exception, another exception occurred:
+app\test\integration\test_content_type_operations.py:126: in test_content_type_delete
+    created_ct = await service.create_content_type(superuser, app_label, model)
+app\application\use_cases\content_type_use_cases.py:128: in create_content_type
+    return await content_type_repository.create(self.db, new_content_type)
+app\adapters\outbound\persistence\repositories\content_type_repository.py:165: in create
+    raise DatabaseOperationException(
+E   app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+_________________________________________________________________________ test_group_create_update_cycle __________________________________________________________________________ 
+app\test\integration\test_group_permission_operations.py:60: in test_group_create_update_cycle
+    db_group = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:34,986 INFO app.application.use_cases.group_use_cases: Group 'test-group-11cc8098-d6d8-4dc6-9ffd-1f7f2823cd54' created by usertest-5ac377c2-badc-4884-ae8b-42d2d7edf43c@example.com
+2025-05-19 08:49:35,008 INFO app.application.use_cases.group_use_cases: Group 17 updated by usertest-5ac377c2-badc-4884-ae8b-42d2d7edf43c@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group-11cc8098-d6d8-4dc6-9ffd-1f7f2823cd54' created by usertest-5ac377c2-badc-4884-ae8b-42d2d7edf43c@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:196 Group 17 updated by usertest-5ac377c2-badc-4884-ae8b-42d2d7edf43c@example.com
+_______________________________________________________________________ test_transaction_rollback_on_error ________________________________________________________________________ 
+app\test\integration\test_transaction_integrity.py:72: in test_transaction_rollback_on_error
+    fetched_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+_________________________________________________________________________ test_transaction_commit_success _________________________________________________________________________ 
+app\test\integration\test_transaction_integrity.py:117: in test_transaction_commit_success
+    users = result.scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+_________________________________________________________________________ test_add_remove_user_to_groups __________________________________________________________________________ 
+app\test\integration\test_user_group_associations.py:57: in test_add_remove_user_to_groups
+    updated_user = await user_group_service.add_user_to_groups(superuser, test_user.id, add_data)
+app\application\use_cases\user_group_use_cases.py:100: in add_user_to_groups
+    groups = await self._get_groups_by_ids(data.group_ids)
+app\application\use_cases\user_group_use_cases.py:63: in _get_groups_by_ids
+    groups = (await self.db.execute(stmt)).scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:41,002 INFO app.application.use_cases.group_use_cases: Group 'test-group1-1f05a9b9-efb5-45f4-883b-56caa4b1f0a4' created by usertest-b5275380-9572-4fe2-a7e0-3d05db6ae443@example.com
+2025-05-19 08:49:41,018 INFO app.application.use_cases.group_use_cases: Group 'test-group2-815f5689-4539-4dec-872f-92887fa1f1a7' created by usertest-b5275380-9572-4fe2-a7e0-3d05db6ae443@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group1-1f05a9b9-efb5-45f4-883b-56caa4b1f0a4' created by usertest-b5275380-9572-4fe2-a7e0-3d05db6ae443@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group2-815f5689-4539-4dec-872f-92887fa1f1a7' created by usertest-b5275380-9572-4fe2-a7e0-3d05db6ae443@example.com
+_________________________________________________________________________ test_user_effective_permissions _________________________________________________________________________ 
+app\test\integration\test_user_group_associations.py:119: in test_user_effective_permissions
+    await user_group_service.add_user_to_groups(superuser, test_user.id, group_data)
+app\application\use_cases\user_group_use_cases.py:100: in add_user_to_groups
+    groups = await self._get_groups_by_ids(data.group_ids)
+app\application\use_cases\user_group_use_cases.py:63: in _get_groups_by_ids
+    groups = (await self.db.execute(stmt)).scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:43,091 INFO app.application.use_cases.group_use_cases: Group 'perm-group-90b65e5d-c3cc-4993-9d88-787ea280ff01' created by usertest-092b9cf2-dc7a-45e2-9491-1c33b3e75db3@example.com
+2025-05-19 08:49:43,122 INFO app.application.use_cases.group_use_cases: Permissions [1, 2] added to group 22 by usertest-092b9cf2-dc7a-45e2-9491-1c33b3e75db3@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'perm-group-90b65e5d-c3cc-4993-9d88-787ea280ff01' created by usertest-092b9cf2-dc7a-45e2-9491-1c33b3e75db3@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:292 Permissions [1, 2] added to group 22 by usertest-092b9cf2-dc7a-45e2-9491-1c33b3e75db3@example.com
+__________________________________________________________________________ test_user_self_update_success __________________________________________________________________________ 
+app\test\integration\test_user_update_operations.py:70: in test_user_self_update_success
+    db_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:45,912 INFO app.application.use_cases.user_use_cases: User updated own profile: updated-self-f47d130e-429c-4d7f-8092-586e627767ae@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.user_use_cases:user_use_cases.py:168 User updated own profile: updated-self-f47d130e-429c-4d7f-8092-586e627767ae@example.com
+_____________________________________________________________________ test_user_admin_update_multiple_fields ______________________________________________________________________ 
+app\test\integration\test_user_update_operations.py:172: in test_user_admin_update_multiple_fields
+    db_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------- 
+2025-05-19 08:49:50,389 INFO app.application.use_cases.user_use_cases: Admin updated user: updated-admin-90305408-ae3f-4502-b3ed-4f278b099f6a@example.com
+-------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.user_use_cases:user_use_cases.py:221 Admin updated user: updated-admin-90305408-ae3f-4502-b3ed-4f278b099f6a@example.com
+============================================================================= short test summary info =============================================================================
+ERROR app/test/integration/test_concurrent_operations.py::test_parallel_user_operations - exceptiongroup.ExceptionGroup: errors while tearing down <Coroutine test_parallel_user_operations> (2 sub-exceptions)
+FAILED app/test/integration/test_cascade_operations.py::test_delete_group_cascade - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_cascade_operations.py::test_delete_user_cascade - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_concurrent_operations.py::test_parallel_user_operations - sqlalchemy.exc.InvalidRequestError: This session is provisioning a new connection; concurrent operations are not permitted (Background on this error at: https://sqlalche.me/e/...
+FAILED app/test/integration/test_content_type_operations.py::test_content_type_create_update_cycle - app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpec...
+FAILED app/test/integration/test_content_type_operations.py::test_content_type_duplicate - app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpec...
+FAILED app/test/integration/test_content_type_operations.py::test_content_type_delete - app.domain.exceptions.DatabaseOperationException: Error creating content type: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpec...
+FAILED app/test/integration/test_group_permission_operations.py::test_group_create_update_cycle - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_transaction_integrity.py::test_transaction_rollback_on_error - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_transaction_integrity.py::test_transaction_commit_success - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_group_associations.py::test_add_remove_user_to_groups - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_group_associations.py::test_user_effective_permissions - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_update_operations.py::test_user_self_update_success - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_update_operations.py::test_user_admin_update_multiple_fields - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+13 failed, 47 passed, 1 warning, 1 error in 60.93s (0:01:00)
+(.venv) PS C:\pycharm\fastapi-hexagonal-async> 
