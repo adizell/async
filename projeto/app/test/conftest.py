@@ -39,18 +39,27 @@ async def async_client(db_session):
 
 @pytest_asyncio.fixture
 async def db_session():
-    session_gen = get_db()
-    session = await session_gen.__anext__()
+    """
+    Fixture para criar uma nova sessão de banco de dados para cada teste.
+    """
+    from app.adapters.outbound.persistence.database import AsyncSessionLocal
+
+    session = AsyncSessionLocal()
     try:
         yield session
-    finally:
-        try:
+        if session.in_transaction():
             await session.commit()
-        except Exception:
+    except Exception:
+        if session.in_transaction():
             await session.rollback()
-            raise
-        finally:
-            await session.aclose()
+        raise
+    finally:
+        # Importante: não fechar a sessão se ela já estiver sendo fechada
+        try:
+            if not session.in_transaction():
+                await session.close()
+        except Exception as e:
+            logger.warning(f"Erro ao fechar sessão de teste: {e}")
 
 
 @pytest_asyncio.fixture

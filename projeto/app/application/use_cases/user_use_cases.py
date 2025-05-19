@@ -112,7 +112,8 @@ class AsyncUserService:
                 .order_by(User.created_at.desc() if order == "desc" else User.created_at.asc())
             )
             logger.info("Listing users by %s", current_user.email)
-            return await paginate(self.db, query, params)
+            result = await self.db.execute(query)  # Use unique() antes de paginar
+            return await paginate(self.db, query.execution_options(populate_existing=True), params)
         except Exception as exc:
             logger.exception("Error listing users")
             raise DatabaseOperationException(message="Error listing users", original_error=exc) from exc

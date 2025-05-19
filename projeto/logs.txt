@@ -1,0 +1,215 @@
+(.venv) PS C:\pycharm\fastapi-hexagonal-async> pytest
+C:\pycharm\fastapi-hexagonal-async\.venv\lib\site-packages\pytest_asyncio\plugin.py:217: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+FF..F..F..FF...FFF.F........................................                                                                                                                                                                 [100%]
+============================================================================================================ FAILURES =============================================================================================================
+____________________________________________________________________________________________________ test_delete_group_cascade ____________________________________________________________________________________________________
+app\test\integration\test_cascade_operations.py:89: in test_delete_group_cascade
+    user = result.scalars().one_or_none()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1796: in one_or_none
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------------------------------ Captured stderr setup ------------------------------------------------------------------------------------------------------ 
+2025-05-19 09:20:43,077 DEBUG asyncio: Using proactor: IocpProactor
+2025-05-19 09:20:43,080 DEBUG asyncio: Using proactor: IocpProactor
+2025-05-19 09:20:43,080 DEBUG passlib.handlers.bcrypt: detected 'bcrypt' backend, version '3.2.2'
+2025-05-19 09:20:43,080 DEBUG passlib.handlers.bcrypt: 'bcrypt' backend lacks $2$ support, enabling workaround
+------------------------------------------------------------------------------------------------------- Captured log setup -------------------------------------------------------------------------------------------------------- 
+DEBUG    asyncio:proactor_events.py:630 Using proactor: IocpProactor
+DEBUG    asyncio:proactor_events.py:630 Using proactor: IocpProactor
+DEBUG    passlib.handlers.bcrypt:bcrypt.py:625 detected 'bcrypt' backend, version '3.2.2'
+DEBUG    passlib.handlers.bcrypt:bcrypt.py:406 'bcrypt' backend lacks $2$ support, enabling workaround
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:43,922 INFO app.application.use_cases.group_use_cases: Group 'cascade-test-group-f78d80f8-56c4-4ff9-aab9-33b970410661' created by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+2025-05-19 09:20:43,942 INFO app.application.use_cases.user_group_use_cases: User abcd655b-d9a1-46c0-b8be-d838ba1c38f4 added to groups [32] by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+2025-05-19 09:20:43,979 INFO app.application.use_cases.group_use_cases: Group 32 ('cascade-test-group-f78d80f8-56c4-4ff9-aab9-33b970410661') deleted by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+2025-05-19 09:20:43,986 WARNING app.application.use_cases.group_use_cases: Group not found: 32
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'cascade-test-group-f78d80f8-56c4-4ff9-aab9-33b970410661' created by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+INFO     app.application.use_cases.user_group_use_cases:user_group_use_cases.py:112 User abcd655b-d9a1-46c0-b8be-d838ba1c38f4 added to groups [32] by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:239 Group 32 ('cascade-test-group-f78d80f8-56c4-4ff9-aab9-33b970410661') deleted by usertest-2d5efafa-395a-4d38-b957-ba7bd99a835e@example.com
+WARNING  app.application.use_cases.group_use_cases:group_use_cases.py:58 Group not found: 32
+____________________________________________________________________________________________________ test_delete_user_cascade _____________________________________________________________________________________________________ 
+app\test\integration\test_cascade_operations.py:156: in test_delete_user_cascade
+    groups = result.scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:44,973 INFO app.application.use_cases.group_use_cases: Group 'user-cascade-group1-12066681-7d38-499a-8a19-ef49e8f74ebe' created by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+2025-05-19 09:20:44,989 INFO app.application.use_cases.group_use_cases: Group 'user-cascade-group2-6341bed9-eb3f-432a-8385-e8fab4583d24' created by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+2025-05-19 09:20:45,004 INFO app.application.use_cases.user_group_use_cases: User e16a01a4-b4d9-48db-b2f3-9434e297f329 added to groups [33, 34] by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'user-cascade-group1-12066681-7d38-499a-8a19-ef49e8f74ebe' created by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'user-cascade-group2-6341bed9-eb3f-432a-8385-e8fab4583d24' created by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+INFO     app.application.use_cases.user_group_use_cases:user_group_use_cases.py:112 User e16a01a4-b4d9-48db-b2f3-9434e297f329 added to groups [33, 34] by usertest-6063f0b3-0d21-46e4-8038-4665ba57c32b@example.com
+______________________________________________________________________________________________ test_content_type_create_update_cycle ______________________________________________________________________________________________ 
+app\adapters\outbound\persistence\repositories\content_type_repository.py:215: in update
+    return content_type.to_domain()
+app\adapters\outbound\persistence\models\user_group\auth_content_type.py:64: in to_domain
+    for perm in self.permissions
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv\lib\site-packages\sqlalchemy\orm\attributes.py:1121: in _fire_loader_callables
+    return self.callable_(state, passive)
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:978: in _load_for_state
+    return self._emit_lazyload(
+.venv\lib\site-packages\sqlalchemy\orm\strategies.py:1141: in _emit_lazyload
+    result = session.execute(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2365: in execute
+    return self._execute_internal(
+.venv\lib\site-packages\sqlalchemy\orm\session.py:2251: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv\lib\site-packages\sqlalchemy\orm\context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+.venv\lib\site-packages\sqlalchemy\sql\elements.py:523: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1638: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1843: in _execute_context
+    return self._exec_single_context(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1983: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\lib\site-packages\sqlalchemy\engine\base.py:2355: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv\lib\site-packages\sqlalchemy\engine\base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv\lib\site-packages\sqlalchemy\engine\default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+.venv\lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py:580: in execute
+    self._adapt_connection.await_(
+.venv\lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:123: in await_only
+    raise exc.MissingGreenlet(
+E   sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+During handling of the above exception, another exception occurred:
+app\test\integration\test_content_type_operations.py:54: in test_content_type_create_update_cycle
+    updated_ct = await service.update_content_type(
+app\application\use_cases\content_type_use_cases.py:174: in update_content_type
+    return await content_type_repository.update(self.db, content_type_id, current_content_type)
+app\adapters\outbound\persistence\repositories\content_type_repository.py:221: in update
+    raise DatabaseOperationException(
+E   app.domain.exceptions.DatabaseOperationException: Error updating content type with ID 21: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+_________________________________________________________________________________________________ test_group_create_update_cycle __________________________________________________________________________________________________ 
+app\test\integration\test_group_permission_operations.py:60: in test_group_create_update_cycle
+    db_group = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:48,666 INFO app.application.use_cases.group_use_cases: Group 'test-group-dc020010-3a00-4f0c-be9d-4d02b2536b21' created by usertest-30150ab1-6d21-41a8-a5b2-c1c9ec9db15c@example.com
+2025-05-19 09:20:48,666 INFO app.application.use_cases.group_use_cases: Group 35 updated by usertest-30150ab1-6d21-41a8-a5b2-c1c9ec9db15c@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group-dc020010-3a00-4f0c-be9d-4d02b2536b21' created by usertest-30150ab1-6d21-41a8-a5b2-c1c9ec9db15c@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:196 Group 35 updated by usertest-30150ab1-6d21-41a8-a5b2-c1c9ec9db15c@example.com
+_______________________________________________________________________________________________ test_transaction_rollback_on_error ________________________________________________________________________________________________ 
+app\test\integration\test_transaction_integrity.py:72: in test_transaction_rollback_on_error
+    fetched_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+_________________________________________________________________________________________________ test_transaction_commit_success _________________________________________________________________________________________________ 
+app\test\integration\test_transaction_integrity.py:117: in test_transaction_commit_success
+    users = result.scalars().all()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1767: in all
+    return self._allrows()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:562: in _allrows
+    for made_row, sig_row in [
+.venv\lib\site-packages\sqlalchemy\engine\result.py:565: in <listcomp>
+    strategy(made_row) if strategy else made_row,
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+_________________________________________________________________________________________________ test_add_remove_user_to_groups __________________________________________________________________________________________________
+app\test\integration\test_user_group_associations.py:68: in test_add_remove_user_to_groups
+    updated_user = await user_group_service.remove_user_from_groups(superuser, test_user.id, remove_data)
+E   AttributeError: 'AsyncUserGroupService' object has no attribute 'remove_user_from_groups'
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:52,546 INFO app.application.use_cases.group_use_cases: Group 'test-group1-7f294f1e-4f19-40a4-827a-495057fe0a69' created by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+2025-05-19 09:20:52,546 INFO app.application.use_cases.group_use_cases: Group 'test-group2-965b2e17-932f-4860-89be-c4132c692380' created by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+2025-05-19 09:20:52,563 INFO app.application.use_cases.user_group_use_cases: User 534124a5-07b8-4e47-94a5-ed75ae06670f added to groups [38, 39] by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group1-7f294f1e-4f19-40a4-827a-495057fe0a69' created by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'test-group2-965b2e17-932f-4860-89be-c4132c692380' created by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+INFO     app.application.use_cases.user_group_use_cases:user_group_use_cases.py:112 User 534124a5-07b8-4e47-94a5-ed75ae06670f added to groups [38, 39] by usertest-9e02d65f-d7b1-4a25-96ed-bd6cbebfa8cd@example.com
+_________________________________________________________________________________________________ test_user_effective_permissions _________________________________________________________________________________________________ 
+app\test\integration\test_user_group_associations.py:128: in test_user_effective_permissions
+    assert len(user_permissions.group_permissions) > 0
+.venv\lib\site-packages\pydantic\main.py:994: in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E   AttributeError: 'UserPermissionOutput' object has no attribute 'group_permissions'. Did you mean: 'direct_permissions'?
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:53,265 INFO app.application.use_cases.group_use_cases: Group 'perm-group-af5ddd91-90d4-4c4c-973a-bb9d4d246488' created by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+2025-05-19 09:20:53,281 INFO app.application.use_cases.group_use_cases: Permissions [1, 2] added to group 40 by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+2025-05-19 09:20:53,297 INFO app.application.use_cases.user_group_use_cases: User 26869ab6-8d5b-43c6-b699-cb27d4c1f59b added to groups [40] by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+2025-05-19 09:20:53,312 INFO app.application.use_cases.user_group_use_cases: Direct permissions [3] added to user 26869ab6-8d5b-43c6-b699-cb27d4c1f59b by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:107 Group 'perm-group-af5ddd91-90d4-4c4c-973a-bb9d4d246488' created by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+INFO     app.application.use_cases.group_use_cases:group_use_cases.py:292 Permissions [1, 2] added to group 40 by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+INFO     app.application.use_cases.user_group_use_cases:user_group_use_cases.py:112 User 26869ab6-8d5b-43c6-b699-cb27d4c1f59b added to groups [40] by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+INFO     app.application.use_cases.user_group_use_cases:user_group_use_cases.py:244 Direct permissions [3] added to user 26869ab6-8d5b-43c6-b699-cb27d4c1f59b by usertest-e8fb14b5-3a52-4e50-aa03-e0c74ef478c1@example.com
+__________________________________________________________________________________________________ test_user_self_update_success __________________________________________________________________________________________________ 
+app\test\integration\test_user_update_operations.py:70: in test_user_self_update_success
+    db_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:54,316 INFO app.application.use_cases.user_use_cases: User updated own profile: updated-self-10d9b79c-ecc2-454a-9f73-c4e15a900757@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call --------------------------------------------------------------------------------------------------------
+INFO     app.application.use_cases.user_use_cases:user_use_cases.py:169 User updated own profile: updated-self-10d9b79c-ecc2-454a-9f73-c4e15a900757@example.com
+_____________________________________________________________________________________________ test_user_admin_update_multiple_fields ______________________________________________________________________________________________ 
+app\test\integration\test_user_update_operations.py:172: in test_user_admin_update_multiple_fields
+    db_user = result.scalars().one()
+.venv\lib\site-packages\sqlalchemy\engine\result.py:1808: in one
+    return self._only_one_row(
+.venv\lib\site-packages\sqlalchemy\engine\result.py:776: in _only_one_row
+    existing_row_hash = strategy(row) if strategy else row
+.venv\lib\site-packages\sqlalchemy\orm\loading.py:285: in require_unique
+    raise sa_exc.InvalidRequestError(
+E   sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+------------------------------------------------------------------------------------------------------ Captured stderr call ------------------------------------------------------------------------------------------------------- 
+2025-05-19 09:20:56,056 INFO app.application.use_cases.user_use_cases: Admin updated user: updated-admin-3a77aed8-8fc2-4fea-8e55-e1965a90ad29@example.com
+-------------------------------------------------------------------------------------------------------- Captured log call -------------------------------------------------------------------------------------------------------- 
+INFO     app.application.use_cases.user_use_cases:user_use_cases.py:222 Admin updated user: updated-admin-3a77aed8-8fc2-4fea-8e55-e1965a90ad29@example.com
+===================================================================================================== short test summary info ===================================================================================================== 
+FAILED app/test/integration/test_cascade_operations.py::test_delete_group_cascade - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_cascade_operations.py::test_delete_user_cascade - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_content_type_operations.py::test_content_type_create_update_cycle - app.domain.exceptions.DatabaseOperationException: Error updating content type with ID 21: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error ...
+FAILED app/test/integration/test_group_permission_operations.py::test_group_create_update_cycle - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_transaction_integrity.py::test_transaction_rollback_on_error - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_transaction_integrity.py::test_transaction_commit_success - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_group_associations.py::test_add_remove_user_to_groups - AttributeError: 'AsyncUserGroupService' object has no attribute 'remove_user_from_groups'
+FAILED app/test/integration/test_user_group_associations.py::test_user_effective_permissions - AttributeError: 'UserPermissionOutput' object has no attribute 'group_permissions'. Did you mean: 'direct_permissions'?
+FAILED app/test/integration/test_user_update_operations.py::test_user_self_update_success - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+FAILED app/test/integration/test_user_update_operations.py::test_user_admin_update_multiple_fields - sqlalchemy.exc.InvalidRequestError: The unique() method must be invoked on this Result, as it contains results that include joined eager loads against collections
+10 failed, 50 passed, 1 warning in 35.11s
+(.venv) PS C:\pycharm\fastapi-hexagonal-async> 

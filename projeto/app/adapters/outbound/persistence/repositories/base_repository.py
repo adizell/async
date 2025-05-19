@@ -111,7 +111,7 @@ class AsyncCRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                         query = query.where(getattr(self.model, field) == value)
 
             result = await db.execute(query.offset(skip).limit(limit))
-            return result.scalars().all()
+            return result.scalars().unique().all()  # Adicionando .unique() aqui
         except SQLAlchemyError as e:
             self.logger.error(f"Error listing {self.model.__name__}s: {str(e)}")
             raise DatabaseOperationException(

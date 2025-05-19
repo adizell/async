@@ -155,10 +155,15 @@ class ContentTypeRepository:
             db.add(content_type)
             await db.flush()
 
-            # Recarregar para ter as relações preenchidas
-            await db.refresh(content_type)
+            # Criar uma instância limpa para retornar, evitando lazy loading
+            new_content_type = ContentType(
+                id=content_type.id,
+                app_label=content_type.app_label,
+                model=content_type.model,
+                permissions=[]  # Inicializar vazio para evitar lazy loading
+            )
 
-            return content_type.to_domain()
+            return new_content_type
 
         except Exception as e:
             await db.rollback()

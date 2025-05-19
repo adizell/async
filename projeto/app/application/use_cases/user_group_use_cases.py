@@ -60,7 +60,8 @@ class AsyncUserGroupService:
     async def _get_groups_by_ids(self, group_ids: List[int]) -> List[AuthGroup]:
         """Get multiple groups by IDs."""
         stmt = select(AuthGroup).where(AuthGroup.id.in_(group_ids))
-        groups = (await self.db.execute(stmt)).scalars().all()
+        result = await self.db.execute(stmt)
+        groups = result.scalars().unique().all()  # Adicionando .unique() aqui
 
         if len(groups) != len(group_ids):
             logger.warning(f"Some group IDs not found: {group_ids}")

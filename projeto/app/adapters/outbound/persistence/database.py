@@ -57,23 +57,18 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
 
     Yields:
         AsyncSession: SQLAlchemy async session
-
-    Example:
-        ```python
-        async with get_db_context() as db:
-            users = await db.execute(select(User))
-            result = users.scalars().all()
-        ```
     """
     session = AsyncSessionLocal()
     try:
         yield session
         await session.commit()
-    except Exception:
+    except Exception as e:
         await session.rollback()
         raise
     finally:
-        await session.close()
+        # Importante: certifique-se de não fechar a sessão se ela já estiver sendo fechada
+        if not session.in_transaction():
+            await session.close()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

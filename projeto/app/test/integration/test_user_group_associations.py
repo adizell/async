@@ -12,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.outbound.persistence.models.user_group.user_model import User
-from app.adapters.outbound.persistence.models.user_group.auth_group import AuthGroup
 from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
 from app.application.use_cases.user_group_use_cases import AsyncUserGroupService
 from app.application.use_cases.group_use_cases import AsyncGroupService
