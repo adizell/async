@@ -8,22 +8,32 @@ This module provides endpoints for listing, retrieving, and managing permissions
 
 import logging
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Body, Query
 from fastapi_pagination import Params, Page
-from httpcore import Response
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    status,
+    Query
+)
 
 from app.adapters.inbound.api.deps import get_permissions_current_user, get_session
 from app.adapters.outbound.persistence.models.user_group.user_model import User
 from app.application.dtos.group_dto import (
     PermissionOutput,
-    ContentTypeOutput, PermissionUpdate, PermissionCreate
+    ContentTypeOutput,
+    PermissionUpdate,
+    PermissionCreate
 )
 from app.application.use_cases.permission_use_cases import AsyncPermissionService
 from app.domain.exceptions import (
     ResourceNotFoundException,
     PermissionDeniedException,
-    ResourceAlreadyExistsException
+    ResourceAlreadyExistsException,
+    DatabaseOperationException
 )
 from app.shared.utils.pagination_utils import pagination_params
 
@@ -41,8 +51,8 @@ router = APIRouter(prefix="/auth-permissions", tags=["Auth Permissions"])
 )
 async def list_permissions(
         db: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_permissions_current_user),
-        params: Params = Depends(pagination_params)
+        params: Params = Depends(pagination_params),
+        current_user: User = Depends(get_permissions_current_user)
 ):
     """
     List all permissions with pagination.
@@ -263,7 +273,7 @@ async def search_permissions(
     Search permissions by name or codename.
 
     Args:
-        q: Search query
+        q: Search term
         db: Database session
         current_user: Authenticated user
 

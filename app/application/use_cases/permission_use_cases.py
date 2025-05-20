@@ -9,7 +9,7 @@ including listing available permissions and content types.
 
 import logging
 from typing import List, Dict, Any
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi_pagination import Params
@@ -18,10 +18,12 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from app.adapters.outbound.persistence.models.user_group.auth_content_type import AuthContentType
 from app.adapters.outbound.persistence.models.user_group.auth_permission import AuthPermission
 from app.adapters.outbound.persistence.models.user_group.user_model import User
+from app.application.dtos.group_dto import PermissionOutput
 from app.domain.exceptions import (
     PermissionDeniedException,
     ResourceNotFoundException,
-    DatabaseOperationException
+    DatabaseOperationException,
+    ResourceAlreadyExistsException
 )
 
 logger = logging.getLogger(__name__)
@@ -212,3 +214,149 @@ class AsyncPermissionService:
                 message="Error getting permissions for content type",
                 original_error=e
             )
+
+    # ────────────────────────────────
+    # Create Permission
+    # ────────────────────────────────
+    async def create_permission(
+            self, current_user: User, name: str, codename: str, content_type_id: int
+    ) -> AuthPermission:
+        """
+        Cria uma nova permissão.
+
+        Args:
+            current_user: O usuário autenticado
+            name: Nome da permissão
+            codename: Código único da permissão
+            content_type_id: ID do tipo de conteúdo associado
+
+        Returns:
+            A permissão criada
+
+        Raises:
+            PermissionDeniedException: Se o usuário não tiver permissão
+            ResourceAlreadyExistsException: Se uma permissão com o mesmo codename já existir
+            ResourceNotFoundException: Se o tipo de conteúdo não for encontrado
+        """
+        # Verificar permissão do usuário
+        if not current_user.is_superuser and not current_user.has_permission("manage_permissions"):
+            logger.warning(f"User {current_user.email} attempted to create permission without permission")
+            raise PermissionDeniedException("You don't have permission to create permissions")
+
+        # Verificar se o codename já existe
+        stmt = select(AuthPermission).where(AuthPermission.codename == codename)
+        result = await self.db.execute(stmt)
+        existing_permission = result.scalars().one_or_none()
+
+        if existing_permission:
+            logger.warning(f"Permission with codename '{codename}' already exists")
+            raise ResourceAlreadyExistsException(
+                detail=f"Permission with codename '{codename}' already exists"
+            )
+
+        # Verificar se o tipo de conteúdo existe
+        content_type = await self._get_content_type_by_id(content_type_id)
+
+        try:
+            # Criar nova permissão
+            permission = AuthPermission(
+                name=name,
+                codename=codename,
+                content_type_id=content_type_id
+            )
+
+            self.db.add(permission)
+            await self.db.commit()
+            await self.db.refresh(permission)
+
+            logger.info(f"Permission '{codename}' created by {current_user.email}")
+            return permission
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.exception(f"Error creating permission: {str(e)}")
+            raise DatabaseOperationException(
+                message="Error creating permission",
+                original_error=e
+            )
+
+    # ────────────────────────────────
+    # Delete Permission
+    # ────────────────────────────────
+    async def delete_permission(self, current_user: User, permission_id: int) -> None:
+        """
+        Remove uma permissão.
+
+        Args:
+            current_user: O usuário autenticado
+            permission_id: ID da permissão a ser removida
+
+        Raises:
+            PermissionDeniedException: Se o usuário não for superusuário
+            ResourceNotFoundException: Se a permissão não for encontrada
+        """
+        # Apenas superusuários podem excluir permissões
+        if not current_user.is_superuser:
+            logger.warning(f"User {current_user.email} attempted to delete permission without being a superuser")
+            raise PermissionDeniedException("Only superusers can delete permissions")
+
+        # Verificar se a permissão existe
+        permission = await self._get_permission_by_id(permission_id)
+
+        try:
+            # Remove a permissão
+            await self.db.delete(permission)
+            await self.db.commit()
+
+            logger.info(f"Permission {permission_id} deleted by {current_user.email}")
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.exception(f"Error deleting permission: {str(e)}")
+            raise DatabaseOperationException(
+                message=f"Error deleting permission",
+                original_error=e
+            )
+
+    # ────────────────────────────────
+    # Search Permissions
+    # ────────────────────────────────
+    async def search_permissions(self, current_user: User, q: str) -> List[PermissionOutput]:
+        """
+        Search permissions by name or codename.
+
+        Args:
+            current_user: Authenticated user
+            q: Search term
+
+        Returns:
+            List of permission DTOs
+
+        Raises:
+            PermissionDeniedException: If user lacks permission
+            DatabaseOperationException: If DB fails
+        """
+        if not current_user.is_superuser and not current_user.has_permission("view_permissions"):
+            logger.warning(f"User {current_user.email} tried to search permissions without permission")
+            raise PermissionDeniedException("You don't have permission to view permissions")
+
+        try:
+            search_term = f"%{q}%"
+            stmt = (
+                select(AuthPermission)
+                .options(selectinload(AuthPermission.content_type))
+                .where(
+                    or_(
+                        AuthPermission.name.ilike(search_term),
+                        AuthPermission.codename.ilike(search_term)
+                    )
+                )
+                .order_by(AuthPermission.codename)
+            )
+            result = await self.db.execute(stmt)
+            permissions = result.scalars().all()
+            return [PermissionOutput.from_orm(p) for p in permissions]
+
+        except Exception as e:
+            logger.exception(f"Error searching permissions: {str(e)}")
+            raise DatabaseOperationException("Error searching permissions", original_error=e)
