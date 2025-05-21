@@ -23,3 +23,14 @@ def register_password_protection():
         if hasattr(model, 'password'):
             event.listen(model, 'before_insert', PasswordProtectionMiddleware.before_insert_or_update)
             event.listen(model, 'before_update', PasswordProtectionMiddleware.before_insert_or_update)
+
+
+def register_all_events():
+    """
+    Registra todos os eventos para os modelos.
+    """
+    register_password_protection()
+
+    # Registra eventos de timezone
+    from app.adapters.outbound.persistence.events import register_datetime_events
+    register_datetime_events()

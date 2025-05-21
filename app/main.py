@@ -47,6 +47,27 @@ async def lifespan(app: FastAPI):
         pass
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application starting up...")
+
+    # Registrar todos os eventos
+    from app.adapters.outbound.persistence.models.user_group.base_model import register_all_events
+    register_all_events()
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    app.state.cleanup_task = asyncio.create_task(periodic_cleanup())
+    yield
+    logger.info("Application shutting down...")
+    app.state.cleanup_task.cancel()
+    try:
+        await app.state.cleanup_task
+    except asyncio.CancelledError:
+        pass
+
+
 app = FastAPI(
     title="ADIZELL",
     description="FastAPI Hexagonal Async",
